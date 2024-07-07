@@ -25,15 +25,15 @@ def annotate_ed_desc_images(
     debug: Annotated[bool, typer.Option("--debug", "-v")] = False,
 ):
     annotator = Annotator(debug)
-    # annotator.process()
+    annotator.process()
     # annotator.write(Path("../gannett-data/fs_eds.parquet"))
 
 
 class Annotator:
     def __init__(self, debug):
-        # self.driver = uc.Chrome(user_data_dir="selenium")
-
         self.store = Store(self.buildImageList())
+        self.last_ed = 0
+        self.driver = uc.Chrome(user_data_dir="selenium")
 
     def buildImageList(self):
         images = []
@@ -64,12 +64,10 @@ class Annotator:
                                 )
                             )
 
-        for img in images:
-            print(img)
-
         return images
 
     def process(self):
+        print("url:", self.store.curr().url)
         self.driver.get(self.store.curr().url)
 
         while True:
@@ -91,10 +89,16 @@ class Annotator:
                     break
 
     def addNextED(self):
-        pass
+        img = self.store.curr()
+        self.last_ed += 1
+        img.add(self.last_ed)
+        print(f"Prev: {self.last_ed}")
+        print(img)
 
     def addPrevED(self):
-        pass
+        img = self.store.curr()
+        img.add(self.last_ed)
+        print(img)
 
     def nextImage(self):
         old = self.store.curr()

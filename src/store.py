@@ -16,17 +16,24 @@ class Image:
         self.ark = ark
         self.image_index = i
         self.cat = cat
+        self.eds = []
 
     def __eq__(self, other):
         return self.ark == other.ark
 
     def __repr__(self):
-        return f"{self.year} {self.utp_code:15} {self.image_index:4} {self.ark}"
+        return (
+            f"{self.year} {self.utp_code:15} {self.image_index:4} {self.ark} {self.eds}"
+        )
+
+    def add(self, ed):
+        if not ed in self.eds:
+            self.eds.append(ed)
 
     @property
     def url(self):
         return FS_IMG_URL.format_map(
-            {"ark": ark, "i": self.image_index, "cat": self.cat}
+            {"ark": self.ark, "i": self.image_index, "cat": self.cat}
         )
 
 
