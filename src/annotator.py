@@ -11,7 +11,9 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from typing_extensions import Annotated
 
-from src.store import Store, prev
+from src.store import Store, prev, Image, CAT_1930
+
+YEARS = ["1930"]
 
 load_dotenv()
 
@@ -31,13 +33,44 @@ class Annotator:
     def __init__(self, debug):
         # self.driver = uc.Chrome(user_data_dir="selenium")
 
-        self.store = Store()
+        self.store = Store(self.buildImageList())
 
-    def gotoNextImage(self):
-        
+    def buildImageList(self):
+        images = []
+        film_info = {}
+        data_dir = Path("../gannett-data/scrape_fs")
+        ark_re = re.compile("(3:1:[^/]+)")
+
+        for film_path in (data_dir / "films").glob("*.json"):
+            with open(film_path) as jsonf:
+                arks = []
+                film_json = json.load(jsonf)
+                for image in film_json["images"]:
+                    m = ark_re.search(image)
+                    if m:
+                        arks.append(m.group(1))
+                film_info[film_path.stem] = arks
+
+        with open(data_dir / "ed_descr_nums.csv") as csvf:
+            for row in csv.DictReader(csvf):
+                if row["year"] in YEARS:
+                    start = int(row["start_index"])
+                    stop = int(row["stop_index"])
+                    for index, ark in enumerate(film_info[row["digital_film_no"]]):
+                        if index >= start and index <= stop:
+                            images.append(
+                                Image(
+                                    row["year"], row["utp_code"], ark, index, CAT_1930
+                                )
+                            )
+
+        for img in images:
+            print(img)
+
+        return images
 
     def process(self):
-        self.driver.get(FS_IMG_URL.format(ark=ark, i=index, cat=CAT_1930))
+        self.driver.get(self.store.curr().url)
 
         while True:
             key = readchar.readkey()
