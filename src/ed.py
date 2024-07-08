@@ -13,5 +13,5 @@ class Ed:
     @classmethod
     def from_str(cls, s):
         tail = s.lstrip("0123456789")
-        head = s[: len(tail)]
+        head = s[: len(s) - len(tail)]
         return cls(int(head), tail)
