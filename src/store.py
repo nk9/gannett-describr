@@ -3,6 +3,11 @@ import json
 import re
 from pathlib import Path
 
+from ordered_set import StableSet
+
+from src.ed import Ed
+from src.log import get_logger
+
 prev = lambda obj: obj.prev()
 
 CAT_1930 = "1037259"
@@ -16,7 +21,8 @@ class Image:
         self.ark = ark
         self.image_index = i
         self.cat = cat
-        self.eds = []
+        self.eds = StableSet([])
+        self.db_id = None
 
     def __eq__(self, other):
         return self.ark == other.ark
@@ -26,9 +32,11 @@ class Image:
             f"{self.year} {self.utp_code:15} {self.image_index:4} {self.ark} {self.eds}"
         )
 
-    def add(self, ed):
-        if not ed in self.eds:
-            self.eds.append(ed)
+    def addED(self, ed):
+        self.eds.add(str(ed).upper())
+
+    def removeED(self, ed):
+        self.eds.remove(str(ed))
 
     @property
     def url(self):
@@ -38,9 +46,14 @@ class Image:
 
 
 class Store:
-    def __init__(self, images):
+    def __init__(self, db, images):
         self.images = images
         self.index = 0
+
+        self.db = db
+        self.init_db()
+        self.populate_db(images)
+        self.log = get_logger()
 
     def __iter__(self):
         return self
@@ -61,3 +74,124 @@ class Store:
 
     def curr(self):
         return self.images[self.index]
+
+    def addEDToCurrentImage(self, ed: Ed):
+        image = self.images[self.index]
+        try:
+            self.db.execute(
+                """
+                INSERT INTO eds (image_id, name) VALUES (?, ?)
+                ON CONFLICT DO NOTHING
+                """,
+                (image.db_id, str(ed)),
+            )
+            image.addED(ed)
+            self.db.connection.commit()
+        except Exception as e:
+            self.log.warning(f"Failed to insert '{ed}' for '{image}': {e}")
+
+    def removeLastED(self):
+        image = self.images[self.index]
+        try:
+            res = self.db.execute(
+                """
+                SELECT id, name
+                FROM eds
+                WHERE image_id = ?
+                ORDER BY id DESC -- get most recent
+                LIMIT 1;
+                """,
+                (image.db_id,),
+            ).fetchone()
+
+            # Make sure there's an ED to remove!
+            if res is not None:
+                (ed_id, name) = res
+                self.db.execute(
+                    """
+                    DELETE FROM eds WHERE id = ?
+                    """,
+                    (ed_id,),
+                )
+                image.removeED(name)
+                self.db.connection.commit()
+        except Exception as e:
+            self.log.warning(f"Failed to remove last ED for '{image}': {e}")
+
+    def largestEDForCurrentMetro(self):
+        image = self.images[self.index]
+
+        res = self.db.execute(
+            """
+            SELECT name
+            FROM eds AS e
+                JOIN images AS i ON i.id = e.image_id
+            WHERE i.utp_code = ?
+            ORDER BY e.name DESC
+            LIMIT 1
+            """,
+            (image.utp_code),
+        ).fetchone()
+
+        return res[0] if res is not None else 1
+
+    def skipToStoppingPoint(self):
+        for index, img in reversed(list(enumerate(self.images))):
+            if len(img.eds):
+                # We've overshot by one
+                self.index = index + 1
+                break
+
+    def init_db(self):
+        self.db.connection.execute("PRAGMA foreign_keys = 1")
+
+        self.db.execute(
+            """
+            CREATE TABLE IF NOT EXISTS images (
+                id INTEGER PRIMARY KEY,
+                year INTEGER NOT NULL,
+                utp_code VARCHAR NOT NULL,
+                ark VARCHAR NOT NULL,
+                image_index INTEGER NOT NULL,
+                cat INTEGER NOT NULL,
+                UNIQUE(ark));
+            """
+        )
+        self.db.execute(
+            """
+            CREATE TABLE IF NOT EXISTS eds (
+                id INTEGER PRIMARY KEY,
+                image_id INTEGER NOT NULL,
+                name VARCHAR,
+                FOREIGN KEY (image_id) REFERENCES images (id),
+                UNIQUE(image_id, name));
+            """
+        )
+        self.db.connection.commit()
+
+    def populate_db(self, images):
+        for image in images:
+            data = (
+                int(image.year),
+                image.utp_code,
+                image.ark,
+                image.image_index,
+                image.cat,
+            )
+            self.db.execute(
+                """
+                INSERT INTO images (year, utp_code, ark, image_index, cat)
+                    VALUES (?, ?, ?, ?, ?) ON CONFLICT DO NOTHING""",
+                data,
+            )
+            res = self.db.execute(
+                """SELECT id FROM images WHERE ark = ?""", (image.ark,)
+            ).fetchone()
+            image.db_id = res[0]
+
+            res = self.db.execute(
+                """SELECT name FROM eds WHERE image_id = ?""", (image.db_id,)
+            ).fetchall()
+            image.eds.update([e[0] for e in res])
+
+        self.db.connection.commit()

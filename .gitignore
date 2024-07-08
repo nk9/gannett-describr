@@ -3,3 +3,5 @@
 *.pyc
 
 *.sublime-workspace
+
+annotated.db

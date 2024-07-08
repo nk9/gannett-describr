@@ -1,10 +1,21 @@
+import sqlite3
+
 import pytest
+from src.store import Image, Store
 
-from src.store import Store, Image
+
+@pytest.fixture
+def test_db():
+    connection = sqlite3.connect(":memory:")
+    cursor = connection.cursor()
+
+    yield cursor
+
+    connection.close()
 
 
-def test_store_init(twoUtps):
-    s = Store(twoUtps)
+def test_store_init(test_db, twoUtps):
+    s = Store(test_db, twoUtps)
     old = s.curr()
 
     assert old.utp_code == "BirminghamAL"
@@ -16,8 +27,8 @@ def test_store_init(twoUtps):
     assert new.image_index == 230
 
 
-def test_across_utp_boundary(twoUtps):
-    s = Store(twoUtps)
+def test_across_utp_boundary(test_db, twoUtps):
+    s = Store(test_db, twoUtps)
     old = s.curr()
 
     for _ in range(3):
@@ -28,11 +39,12 @@ def test_across_utp_boundary(twoUtps):
 
 
 def test_image_add_ed(oneImage):
-    oneImage.add(1)
-    oneImage.add(2)
-    oneImage.add(2)
+    oneImage.addED(1)
+    oneImage.addED(2)
+    oneImage.addED(2)
+    oneImage.addED("3a")
 
-    assert oneImage.eds == [1, 2]
+    assert list(oneImage.eds) == ["1", "2", "3A"]
 
 
 def test_image_url(oneImage):

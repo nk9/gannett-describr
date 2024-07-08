@@ -1,17 +1,25 @@
 import csv
 import json
 import re
+import sqlite3
 from pathlib import Path
 
 import readchar
 import typer
 import undetected_chromedriver as uc
 from dotenv import load_dotenv
+from prompt_toolkit import prompt
+from prompt_toolkit.key_binding import KeyBindings
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from typing_extensions import Annotated
 
-from src.store import Store, prev, Image, CAT_1930
+from src.ed import Ed
+from src.store import CAT_1930, Image, Store, prev
+
+# Turn on to get verbose Selenium logs
+# import logging
+# logging.basicConfig(level=10)
 
 YEARS = ["1930"]
 
@@ -31,9 +39,16 @@ def annotate_ed_desc_images(
 
 class Annotator:
     def __init__(self, debug):
-        self.store = Store(self.buildImageList())
-        self.last_ed = 0
-        self.driver = uc.Chrome(user_data_dir="selenium")
+        connection = sqlite3.connect("annotated.db")
+        cursor = connection.cursor()
+        self.store = Store(cursor, self.buildImageList())
+
+        self.curr_ed = Ed(1)
+        options = uc.ChromeOptions()
+        options.add_argument("--user-data-dir=selenium")
+        options.add_argument("--window-size=1504,1573")  # broken?
+        options.add_argument("--window-position=1504,25")  # broken?
+        self.driver = uc.Chrome(options=options)
 
     def buildImageList(self):
         images = []
@@ -67,58 +82,90 @@ class Annotator:
         return images
 
     def process(self):
-        print("url:", self.store.curr().url)
-        self.driver.get(self.store.curr().url)
+        # self.driver.get(self.store.curr().url)
 
-        while True:
-            key = readchar.readkey()
-            print(key)
+        bindings = self.setupBindings()
+        print("c: assign current ED, n: assign next ED, ]: next image")
+        text = prompt("> ", bottom_toolbar=self.bottom_toolbar, key_bindings=bindings)
+        print(f"You said: {text}")
 
-            match key:
-                case x if "0" <= x <= "9":
-                    print("digit")
-                case "[":
-                    self.prevImage()
-                case "]":
-                    self.nextImage()
-                case "n":
-                    self.addNextED()
-                case "p":
-                    self.addPrevED()
-                case "q":
-                    break
+    def setupBindings(self):
+        kb = KeyBindings()
+
+        @kb.add("s")
+        def _(event):
+            self.skipToStoppingPoint()
+
+        @kb.add("n")
+        def _(event):
+            self.addNextED()
+
+        @kb.add("c")
+        def _(event):
+            self.addCurrED()
+
+        @kb.add("e")
+        def _(event):
+            self.addCustomED()
+
+        @kb.add("]")
+        def _(event):
+            self.nextImage()
+
+        @kb.add("[")
+        def _(event):
+            self.prevImage()
+
+        @kb.add("c-delete")
+        def _(event):
+            self.removeLastED()
+
+        return kb
+
+    def bottom_toolbar(self):
+        now = self.store.curr()
+        return f"Current ED: {self.curr_ed} - {list(now.eds)}"
+
+    def skipToStoppingPoint(self):
+        self.store.skipToStoppingPoint()
+        new = self.store.curr()
+        self.curr_ed = Ed.from_str(next(reversed(new.eds)))
+        print(f"Current ED: {self.curr_ed}")
+        next(self.store)
 
     def addNextED(self):
-        img = self.store.curr()
-        self.last_ed += 1
-        img.add(self.last_ed)
-        print(f"Prev: {self.last_ed}")
-        print(img)
+        self.curr_ed += 1
+        self.store.addEDToCurrentImage(self.curr_ed)
 
-    def addPrevED(self):
-        img = self.store.curr()
-        img.add(self.last_ed)
-        print(img)
+    def addCurrED(self):
+        self.store.addEDToCurrentImage(self.curr_ed)
+
+    def addCustomED(self):
+        custom_ed = Ed.from_str(input("ED: ").strip())
+        self.store.addEDToCurrentImage(custom_ed)
+
+    def removeLastED(self):
+        self.store.removeLastED()
 
     def nextImage(self):
         old = self.store.curr()
         new = next(self.store)
-        print(new)
 
         if old.utp_code == new.utp_code:
             self.clickSpanWithClass("next")
         else:
             self.driver.get(new.url)
+            self.curr_ed = Ed(1)
 
     def prevImage(self):
         old = self.store.curr()
         new = prev(self.store)
-        print(new)
 
         if old.utp_code == new.utp_code:
             self.clickSpanWithClass("previous")
         else:
             self.driver.get(new.url)
+            self.curr_ed = Ed.from_str(self.store.largestEDForCurrentMetro())
 
     def clickSpanWithClass(self, name):
         self.driver.execute_script(
