@@ -94,7 +94,7 @@ class Annotator:
 
         @kb.add("s")
         def _(event):
-            self.skipToStoppingPoint()
+            self.skipToLastEntered()
 
         @kb.add("n")
         def _(event):
@@ -126,11 +126,14 @@ class Annotator:
         now = self.store.curr()
         return f"Current ED: {self.curr_ed} - {list(now.eds)}"
 
-    def skipToStoppingPoint(self):
-        self.store.skipToStoppingPoint()
-        new = self.store.curr()
-        self.curr_ed = Ed.from_str(next(reversed(new.eds)))
-        print(f"Current ED: {self.curr_ed}")
+    def current_image(self):
+        now = self.store.curr()
+        return str(now)
+
+    def skipToLastEntered(self):
+        self.store.skipToLastEntered()
+        last = self.store.curr()
+        self.curr_ed = Ed.from_str(list(last.eds)[-1])
         next(self.store)
 
     def addNextED(self):

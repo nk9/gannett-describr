@@ -1,4 +1,5 @@
 /selenium
+/src/prompt-toolkit
 .DS_Store
 *.pyc
 

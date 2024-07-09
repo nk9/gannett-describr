@@ -28,9 +28,7 @@ class Image:
         return self.ark == other.ark
 
     def __repr__(self):
-        return (
-            f"{self.year} {self.utp_code:15} {self.image_index:4} {self.ark} {self.eds}"
-        )
+        return f"{self.year} {self.utp_code:15} {self.image_index:4} {self.ark}"
 
     def addED(self, ed):
         self.eds.add(str(ed).upper())
@@ -135,11 +133,10 @@ class Store:
 
         return res[0] if res is not None else 1
 
-    def skipToStoppingPoint(self):
+    def skipToLastEntered(self):
         for index, img in reversed(list(enumerate(self.images))):
             if len(img.eds):
-                # We've overshot by one
-                self.index = index + 1
+                self.index = index
                 break
 
     def init_db(self):

@@ -1,7 +1,7 @@
 import sqlite3
 
 import pytest
-from src.store import Image, Store
+from src.store import Image, Store, prev
 
 
 @pytest.fixture
@@ -25,6 +25,11 @@ def test_store_init(test_db, twoUtps):
 
     assert new.utp_code == "BirminghamAL"
     assert new.image_index == 230
+
+    now = prev(s)
+
+    assert now.utp_code == "BirminghamAL"
+    assert now.image_index == 229
 
 
 def test_across_utp_boundary(test_db, twoUtps):
@@ -52,6 +57,16 @@ def test_image_url(oneImage):
         oneImage.url
         == "https://www.familysearch.org/ark:/61903/3:1:3Q9M-CSVR-VSRX-L?i=229&cat=1037259"
     )
+
+
+def test_skip_to_last_entered(test_db, twoUtps):
+    s = Store(test_db, twoUtps)
+    s.images[2].eds.update(["4A", "4B"])
+    s.skipToLastEntered()
+
+    cur = s.curr()
+
+    assert cur.ark == twoUtps[2].ark
 
 
 @pytest.fixture
