@@ -116,6 +116,22 @@ class Annotator:
         def _(event):
             self.prevImage()
 
+        @kb.add("}")
+        def _(event):
+            self.nextMetro()
+
+        @kb.add("{")
+        def _(event):
+            self.prevMetro()
+
+        @kb.add("+")
+        def _(event):
+            self.increaseED()
+
+        @kb.add("-")
+        def _(event):
+            self.decreaseED()
+
         @kb.add("c-delete")
         def _(event):
             self.removeLastED()
@@ -143,6 +159,12 @@ class Annotator:
     def addCurrED(self):
         self.store.addEDToCurrentImage(self.curr_ed)
 
+    def increaseED(self):
+        self.curr_ed += 1
+
+    def decreaseED(self):
+        self.curr_ed -= 1
+
     def addCustomED(self):
         custom_ed = Ed.from_str(input("ED: ").strip())
         self.store.addEDToCurrentImage(custom_ed)
@@ -169,6 +191,12 @@ class Annotator:
         else:
             self.driver.get(new.url)
             self.curr_ed = Ed.from_str(self.store.largestEDForCurrentMetro())
+
+    def nextMetro(self):
+        self.store.nextMetro()
+
+    def prevMetro(self):
+        self.store.prevMetro()
 
     def clickSpanWithClass(self, name):
         self.driver.execute_script(

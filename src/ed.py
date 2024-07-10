@@ -10,6 +10,12 @@ class Ed:
         self.num += other
         return self
 
+    def __isub__(self, other: int):
+        if self.num > 1:
+            self.num -= other
+
+        return self
+
     @classmethod
     def from_str(cls, s):
         tail = s.lstrip("0123456789")
