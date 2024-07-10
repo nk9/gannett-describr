@@ -9,7 +9,15 @@ import typer
 import undetected_chromedriver as uc
 from dotenv import load_dotenv
 from prompt_toolkit import prompt
-from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.application import Application
+from prompt_toolkit.application.current import get_app
+from prompt_toolkit.filters import Condition
+from prompt_toolkit.key_binding import KeyBindings, ConditionalKeyBindings
+from prompt_toolkit.layout.containers import Window, HSplit
+from prompt_toolkit.layout.layout import Layout
+from prompt_toolkit.layout import ConditionalContainer, DynamicContainer
+from prompt_toolkit.layout.controls import FormattedTextControl
+from prompt_toolkit.widgets import TextArea, SearchToolbar
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from typing_extensions import Annotated
@@ -37,11 +45,20 @@ def annotate_ed_desc_images(
     # annotator.write(Path("../gannett-data/fs_eds.parquet"))
 
 
+show_ed_input = False
+
+
+@Condition
+def notShowingEdInput():
+    return not show_ed_input
+
+
 class Annotator:
     def __init__(self, debug):
         connection = sqlite3.connect("annotated.db")
         cursor = connection.cursor()
         self.store = Store(cursor, self.buildImageList())
+        self.counter = 100
 
         self.curr_ed = Ed(1)
         options = uc.ChromeOptions()
@@ -82,12 +99,32 @@ class Annotator:
         return images
 
     def process(self):
-        # self.driver.get(self.store.curr().url)
+        self.driver.get(self.store.curr().url)  # ("https://apple.com")  #
 
         bindings = self.setupBindings()
-        print("c: assign current ED, n: assign next ED, ]: next image")
-        text = prompt("> ", bottom_toolbar=self.bottom_toolbar, key_bindings=bindings)
-        print(f"You said: {text}")
+
+        application = Application(
+            key_bindings=bindings, full_screen=False, layout=self.layout()
+        )
+        application.run()
+
+    def layout(self):
+        def makeLayout():
+            global show_ed_input
+
+            search_field = SearchToolbar()
+            self.ed_input = TextArea(height=1, prompt="ED> ", search_field=search_field)
+            self.ed_input.accept_handler = self.accept_ed
+
+            return HSplit(
+                [
+                    Window(FormattedTextControl(self.top_toolbar()), height=1),
+                    Window(FormattedTextControl(self.bottom_toolbar()), height=1),
+                    ConditionalContainer(content=self.ed_input, filter=show_ed_input),
+                ]
+            )
+
+        return Layout(DynamicContainer(makeLayout))
 
     def setupBindings(self):
         kb = KeyBindings()
@@ -104,9 +141,9 @@ class Annotator:
         def _(event):
             self.addCurrED()
 
-        @kb.add("e")
-        def _(event):
-            self.addCustomED()
+        # @kb.add("e")
+        # def _(event):
+        #     self.addCustomED()
 
         @kb.add("]")
         def _(event):
@@ -132,11 +169,28 @@ class Annotator:
         def _(event):
             self.decreaseED()
 
+        @kb.add("=")
+        def _(event):
+            self.syncImageWithDriver()
+
+        @kb.add("j")
+        def _(event):
+            self.jumpToIndex()
+
         @kb.add("c-delete")
         def _(event):
             self.removeLastED()
 
-        return kb
+        @kb.add("c-c")
+        @kb.add("q")
+        def _(event):
+            get_app().exit(result=True)
+
+        return ConditionalKeyBindings(kb, notShowingEdInput)
+
+    def top_toolbar(self):
+        now = self.store.curr()
+        return f"{str(now)}"
 
     def bottom_toolbar(self):
         now = self.store.curr()
@@ -166,8 +220,18 @@ class Annotator:
         self.curr_ed -= 1
 
     def addCustomED(self):
-        custom_ed = Ed.from_str(input("ED: ").strip())
+        global show_ed_input
+        show_ed_input = True
+
+    def accept_ed(self, buffer):
+        global show_ed_input
+        show_ed_input = False
+
+        raw = self.ed_input.text
+        custom_ed = Ed.from_str(raw.strip())
         self.store.addEDToCurrentImage(custom_ed)
+
+        return False  # reset the buffer
 
     def removeLastED(self):
         self.store.removeLastED()
@@ -206,6 +270,13 @@ class Annotator:
             span.dispatchEvent(click);
         """
         )
+
+    def jumpToIndex(self):
+        pass
+
+    def syncImageWithDriver(self):
+        cur = self.store.curr()
+        self.driver.get(cur.url)
 
 
 if __name__ == "__main__":
