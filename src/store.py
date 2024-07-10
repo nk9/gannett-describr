@@ -70,6 +70,30 @@ class Store:
 
         raise StopIteration
 
+    def nextMetro(self):
+        for index, img in enumerate(self.images):
+            if (
+                index < len(self.images) - 1
+                and index >= self.index
+                and img.utp_code != self.images[index + 1].utp_code
+            ):
+                self.index = index + 1
+                return self.images[self.index]
+
+        return None
+
+    def prevMetro(self):
+        for index, img in reversed(list(enumerate(self.images[: self.index + 1]))):
+            if (
+                index >= 1
+                and index <= self.index
+                and img.utp_code != self.images[index - 1].utp_code
+            ):
+                self.index = index - 1
+                return self.images[self.index]
+
+        return None
+
     def curr(self):
         return self.images[self.index]
 

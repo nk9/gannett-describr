@@ -14,8 +14,8 @@ def test_db():
     connection.close()
 
 
-def test_store_init(test_db, twoUtps):
-    s = Store(test_db, twoUtps)
+def test_store_init(test_db, manyUtps):
+    s = Store(test_db, manyUtps)
     old = s.curr()
 
     assert old.utp_code == "BirminghamAL"
@@ -32,8 +32,8 @@ def test_store_init(test_db, twoUtps):
     assert now.image_index == 229
 
 
-def test_across_utp_boundary(test_db, twoUtps):
-    s = Store(test_db, twoUtps)
+def test_across_utp_boundary(test_db, manyUtps):
+    s = Store(test_db, manyUtps)
     old = s.curr()
 
     for _ in range(3):
@@ -41,6 +41,33 @@ def test_across_utp_boundary(test_db, twoUtps):
 
     assert old != new
     assert old.utp_code != new.utp_code
+
+
+def test_next_metro(test_db, manyUtps):
+    s = Store(test_db, manyUtps)
+
+    img = s.nextMetro()
+    assert img.ark == manyUtps[3].ark
+    img = s.nextMetro()
+    assert img.ark == manyUtps[5].ark
+    img = s.nextMetro()
+    assert img.ark == manyUtps[8].ark
+
+    s.nextMetro() == None
+
+
+def test_prev_metro(test_db, manyUtps):
+    s = Store(test_db, manyUtps)
+    s.index = 8
+
+    img = s.prevMetro()
+    assert img.ark == manyUtps[7].ark
+    img = s.prevMetro()
+    assert img.ark == manyUtps[4].ark
+    img = s.prevMetro()
+    assert img.ark == manyUtps[2].ark
+
+    s.prevMetro() == None
 
 
 def test_image_add_ed(oneImage):
@@ -59,24 +86,28 @@ def test_image_url(oneImage):
     )
 
 
-def test_skip_to_last_entered(test_db, twoUtps):
-    s = Store(test_db, twoUtps)
+def test_skip_to_last_entered(test_db, manyUtps):
+    s = Store(test_db, manyUtps)
     s.images[2].eds.update(["4A", "4B"])
     s.skipToLastEntered()
 
     cur = s.curr()
 
-    assert cur.ark == twoUtps[2].ark
+    assert cur.ark == manyUtps[2].ark
 
 
 @pytest.fixture
-def twoUtps():
+def manyUtps():
     return [
         Image("1930", "BirminghamAL", "3:1:3Q9M-CSVR-VSRX-L", 229, "1037259"),
         Image("1930", "BirminghamAL", "3:1:3Q9M-CSVR-VSR4-H", 230, "1037259"),
         Image("1930", "BirminghamAL", "3:1:3Q9M-CSVR-VSTT-L", 231, "1037259"),
         Image("1930", "OaklandCA", "3:1:3QHV-R32D-G1N2", 15, "1037259"),
         Image("1930", "OaklandCA", "3:1:3QHV-532D-GTWB", 16, "1037259"),
+        Image("1930", "SpringfieldMA", "3:1:3QHV-532D-G9FS-M", 316, "1037259"),
+        Image("1930", "SpringfieldMA", "3:1:3QHV-R32D-G92N-3", 317, "1037259"),
+        Image("1930", "SpringfieldMA", "3:1:3QHV-532D-G9XN-Z", 318, "1037259"),
+        Image("1930", "BostonMA", "3:1:3QHV-532D-G98P-V", 757, "1037259"),
     ]
 
 
