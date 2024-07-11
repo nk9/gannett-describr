@@ -109,12 +109,14 @@ class Annotator:
         application.run()
 
     def layout(self):
+        search_field = SearchToolbar()
+        self.ed_input = TextArea(
+            height=1, prompt="ED> ", multiline=False, search_field=search_field
+        )
+        self.ed_input.accept_handler = self.accept_ed
+
         def makeLayout():
             global show_ed_input
-
-            search_field = SearchToolbar()
-            self.ed_input = TextArea(height=1, prompt="ED> ", search_field=search_field)
-            self.ed_input.accept_handler = self.accept_ed
 
             return HSplit(
                 [
@@ -141,9 +143,9 @@ class Annotator:
         def _(event):
             self.addCurrED()
 
-        # @kb.add("e")
-        # def _(event):
-        #     self.addCustomED()
+        @kb.add("e")
+        def _(event):
+            self.addCustomED()
 
         @kb.add("]")
         def _(event):
@@ -204,7 +206,9 @@ class Annotator:
         self.store.skipToLastEntered()
         last = self.store.curr()
         self.curr_ed = Ed.from_str(list(last.eds)[-1])
-        next(self.store)
+        new = next(self.store)
+
+        self.driver.get(new.url)
 
     def addNextED(self):
         self.curr_ed += 1
@@ -222,6 +226,8 @@ class Annotator:
     def addCustomED(self):
         global show_ed_input
         show_ed_input = True
+
+        self.ed_input.text = ""
 
     def accept_ed(self, buffer):
         global show_ed_input
@@ -257,10 +263,12 @@ class Annotator:
             self.curr_ed = Ed.from_str(self.store.largestEDForCurrentMetro())
 
     def nextMetro(self):
-        self.store.nextMetro()
+        new = self.store.nextMetro()
+        self.driver.get(new.url)
 
     def prevMetro(self):
-        self.store.prevMetro()
+        new = self.store.prevMetro()
+        self.driver.get(new.url)
 
     def clickSpanWithClass(self, name):
         self.driver.execute_script(
