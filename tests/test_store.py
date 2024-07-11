@@ -2,6 +2,7 @@ import sqlite3
 
 import pytest
 from src.store import Image, Store, prev
+from src.ed import Ed
 
 
 @pytest.fixture
@@ -94,6 +95,20 @@ def test_skip_to_last_entered(test_db, manyUtps):
     cur = s.curr()
 
     assert cur.ark == manyUtps[2].ark
+
+
+def test_largest_ed(test_db, oneImage):
+    s = Store(test_db, [oneImage])
+
+    ed_name = s.largestEDForCurrentMetro()
+
+    assert ed_name == "1"
+
+    s.addEDToCurrentImage(Ed(10))
+
+    ed_name = s.largestEDForCurrentMetro()
+
+    assert ed_name == "10"
 
 
 @pytest.fixture

@@ -152,10 +152,10 @@ class Store:
             ORDER BY e.name DESC
             LIMIT 1
             """,
-            (image.utp_code),
+            (image.utp_code,),
         ).fetchone()
 
-        return res[0] if res is not None else 1
+        return res[0] if res is not None else "1"
 
     def skipToLastEntered(self):
         for index, img in reversed(list(enumerate(self.images))):
