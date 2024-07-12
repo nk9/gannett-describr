@@ -71,6 +71,7 @@ class Annotator:
         cursor = connection.cursor()
         self.store = Store(cursor, self.buildImageList())
         self.counter = 100
+        self.last_manual_ed_str = ""
 
         self.curr_ed = Ed(1)
         options = uc.ChromeOptions()
@@ -258,15 +259,18 @@ class Annotator:
         global show_ed_input
         show_ed_input = True
 
-        self.ed_input.text = ""
+        self.ed_input.text = self.last_manual_ed_str
         get_app().layout.focus(self.ed_input)
+        buf = self.ed_input.buffer
+        buf.cursor_position = len(self.ed_input.text)
 
     def accept_ed(self, buffer):
         global show_ed_input
         show_ed_input = False
 
-        raw = self.ed_input.text
-        custom_ed = Ed.from_str(raw.strip())
+        stripped = self.ed_input.text.strip()
+        self.last_manual_ed_str = stripped
+        custom_ed = Ed.from_str(stripped)
         self.store.addEDToCurrentImage(custom_ed)
 
         return False  # reset the buffer
@@ -320,10 +324,12 @@ class Annotator:
     def nextMetro(self):
         new = self.store.nextMetro()
         self.driver.get(new.url)
+        self.curr_ed = Ed(1)
 
     def prevMetro(self):
         new = self.store.prevMetro()
         self.driver.get(new.url)
+        self.curr_ed = Ed.from_str(self.store.largestEDForCurrentMetro())
 
     def clickSpanWithClass(self, name):
         self.driver.execute_script(
