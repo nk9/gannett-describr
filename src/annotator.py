@@ -46,11 +46,20 @@ def annotate_ed_desc_images(
 
 
 show_ed_input = False
+DISABLE_DRIVER = True
 
 
 @Condition
 def notShowingEdInput():
     return not show_ed_input
+
+
+class DummyDriver:
+    def get(self, url):
+        pass
+
+    def execute_script(self, script):
+        pass
 
 
 class Annotator:
@@ -66,7 +75,8 @@ class Annotator:
         options.add_argument("--disk-cache-size=524300000")
         options.add_argument("--window-size=1504,1573")  # broken?
         options.add_argument("--window-position=1504,25")  # broken?
-        self.driver = uc.Chrome(options=options)
+
+        self.driver = DummyDriver() if DISABLE_DRIVER else uc.Chrome(options=options)
 
     def buildImageList(self):
         images = []
