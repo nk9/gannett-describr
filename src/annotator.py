@@ -31,6 +31,9 @@ from src.store import CAT_1930, Image, Store, prev
 # import logging
 # logging.basicConfig(level=10)
 
+DISABLE_DRIVER = True
+SHOW_ED_INPUT = False
+SHOW_JUMP_INPUT = False
 YEARS = ["1930"]
 
 load_dotenv()
@@ -47,14 +50,9 @@ def annotate_ed_desc_images(
     # annotator.write(Path("../gannett-data/fs_eds.parquet"))
 
 
-show_ed_input = False
-show_jump_input = False
-DISABLE_DRIVER = True
-
-
 @Condition
 def notShowingInput():
-    return not (show_ed_input or show_jump_input)
+    return not (SHOW_ED_INPUT or SHOW_JUMP_INPUT)
 
 
 class DummyDriver:
@@ -142,16 +140,13 @@ class Annotator:
         self.jump_input.accept_handler = self.accept_jump
 
         def makeLayout():
-            global show_ed_input
-            global show_jump_input
-
             return HSplit(
                 [
                     Window(FormattedTextControl(self.top_toolbar()), height=1),
                     Window(FormattedTextControl(self.bottom_toolbar()), height=1),
-                    ConditionalContainer(content=self.ed_input, filter=show_ed_input),
+                    ConditionalContainer(content=self.ed_input, filter=SHOW_ED_INPUT),
                     ConditionalContainer(
-                        content=self.jump_input, filter=show_jump_input
+                        content=self.jump_input, filter=SHOW_JUMP_INPUT
                     ),
                 ]
             )
@@ -256,8 +251,8 @@ class Annotator:
         self.curr_ed -= 1
 
     def addCustomED(self):
-        global show_ed_input
-        show_ed_input = True
+        global SHOW_ED_INPUT
+        SHOW_ED_INPUT = True
 
         self.ed_input.text = self.last_manual_ed_str
         get_app().layout.focus(self.ed_input)
@@ -265,8 +260,8 @@ class Annotator:
         buf.cursor_position = len(self.ed_input.text)
 
     def accept_ed(self, buffer):
-        global show_ed_input
-        show_ed_input = False
+        global SHOW_ED_INPUT
+        SHOW_ED_INPUT = False
 
         stripped = self.ed_input.text.strip()
         self.last_manual_ed_str = stripped
@@ -276,8 +271,8 @@ class Annotator:
         return False  # reset the buffer
 
     def jumpToIndex(self):
-        global show_jump_input
-        show_jump_input = True
+        global SHOW_JUMP_INPUT
+        SHOW_JUMP_INPUT = True
 
         self.jump_input.text = str(self.store.index)
         get_app().layout.focus(self.jump_input)
@@ -285,8 +280,8 @@ class Annotator:
         buf.cursor_position = len(self.jump_input.text)
 
     def accept_jump(self, buffer):
-        global show_jump_input
-        show_jump_input = False
+        global SHOW_JUMP_INPUT
+        SHOW_JUMP_INPUT = False
 
         raw = self.jump_input.text
         new_index = int(raw)
