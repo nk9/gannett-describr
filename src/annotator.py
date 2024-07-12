@@ -11,13 +11,15 @@ from dotenv import load_dotenv
 from prompt_toolkit import prompt
 from prompt_toolkit.application import Application
 from prompt_toolkit.application.current import get_app
+from prompt_toolkit.data_structures import Point
 from prompt_toolkit.filters import Condition
-from prompt_toolkit.key_binding import KeyBindings, ConditionalKeyBindings
-from prompt_toolkit.layout.containers import Window, HSplit
-from prompt_toolkit.layout.layout import Layout
+from prompt_toolkit.key_binding import ConditionalKeyBindings, KeyBindings
 from prompt_toolkit.layout import ConditionalContainer, DynamicContainer
+from prompt_toolkit.layout.containers import HSplit, Window
 from prompt_toolkit.layout.controls import FormattedTextControl
-from prompt_toolkit.widgets import TextArea, SearchToolbar
+from prompt_toolkit.layout.layout import Layout
+from prompt_toolkit.validation import ValidationError, Validator
+from prompt_toolkit.widgets import SearchToolbar, TextArea
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from typing_extensions import Annotated
@@ -46,12 +48,13 @@ def annotate_ed_desc_images(
 
 
 show_ed_input = False
+show_jump_input = False
 DISABLE_DRIVER = True
 
 
 @Condition
-def notShowingEdInput():
-    return not show_ed_input
+def notShowingInput():
+    return not (show_ed_input or show_jump_input)
 
 
 class DummyDriver:
@@ -120,20 +123,35 @@ class Annotator:
         application.run()
 
     def layout(self):
-        search_field = SearchToolbar()
+        ed_search_field = SearchToolbar()
         self.ed_input = TextArea(
-            height=1, prompt="ED> ", multiline=False, search_field=search_field
+            height=1, prompt="ED> ", multiline=False, search_field=ed_search_field
         )
         self.ed_input.accept_handler = self.accept_ed
 
+        jump_search_field = SearchToolbar()
+        num_validator = NumberValidator()
+        self.jump_input = TextArea(
+            height=1,
+            prompt="Jump to> ",
+            multiline=False,
+            search_field=jump_search_field,
+            validator=num_validator,
+        )
+        self.jump_input.accept_handler = self.accept_jump
+
         def makeLayout():
             global show_ed_input
+            global show_jump_input
 
             return HSplit(
                 [
                     Window(FormattedTextControl(self.top_toolbar()), height=1),
                     Window(FormattedTextControl(self.bottom_toolbar()), height=1),
                     ConditionalContainer(content=self.ed_input, filter=show_ed_input),
+                    ConditionalContainer(
+                        content=self.jump_input, filter=show_jump_input
+                    ),
                 ]
             )
 
@@ -199,7 +217,7 @@ class Annotator:
         def _(event):
             get_app().exit(result=True)
 
-        return ConditionalKeyBindings(kb, notShowingEdInput)
+        return ConditionalKeyBindings(kb, notShowingInput)
 
     def top_toolbar(self):
         now = self.store.curr()
@@ -207,7 +225,9 @@ class Annotator:
 
     def bottom_toolbar(self):
         now = self.store.curr()
-        return f"Current ED: {self.curr_ed} - {list(now.eds)}"
+        return (
+            f"<{self.store.index:5}> Cur ED: {self.curr_ed} - Img EDs: {list(now.eds)}"
+        )
 
     def current_image(self):
         now = self.store.curr()
@@ -239,6 +259,7 @@ class Annotator:
         show_ed_input = True
 
         self.ed_input.text = ""
+        get_app().layout.focus(self.ed_input)
 
     def accept_ed(self, buffer):
         global show_ed_input
@@ -247,6 +268,29 @@ class Annotator:
         raw = self.ed_input.text
         custom_ed = Ed.from_str(raw.strip())
         self.store.addEDToCurrentImage(custom_ed)
+
+        return False  # reset the buffer
+
+    def jumpToIndex(self):
+        global show_jump_input
+        show_jump_input = True
+
+        self.jump_input.text = str(self.store.index)
+        get_app().layout.focus(self.jump_input)
+        buf = self.jump_input.buffer
+        buf.cursor_position = len(self.jump_input.text)
+
+    def accept_jump(self, buffer):
+        global show_jump_input
+        show_jump_input = False
+
+        raw = self.jump_input.text
+        new_index = int(raw)
+
+        if new_index > 0 and new_index < len(self.store.images):
+            self.store.index = new_index
+            new = self.store.curr()
+            self.driver.get(new.url)
 
         return False  # reset the buffer
 
@@ -290,12 +334,25 @@ class Annotator:
         """
         )
 
-    def jumpToIndex(self):
-        pass
-
     def syncImageWithDriver(self):
         cur = self.store.curr()
         self.driver.get(cur.url)
+
+
+class NumberValidator(Validator):
+    def validate(self, document):
+        text = document.text
+
+        if text and not text.isdigit():
+            i = 0
+
+            # Get index of first non numeric character.
+            # We want to move the cursor here.
+            for i, c in enumerate(text):
+                if not c.isdigit():
+                    break
+
+            raise ValidationError(message="Array index only", cursor_position=i)
 
 
 if __name__ == "__main__":
