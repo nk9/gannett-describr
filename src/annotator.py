@@ -158,6 +158,10 @@ class Annotator:
 
         @kb.add("s")
         def _(event):
+            self.skipToLastEnteredWithinMetro()
+
+        @kb.add("S")
+        def _(event):
             self.skipToLastEntered()
 
         @kb.add("n")
@@ -231,6 +235,13 @@ class Annotator:
 
     def skipToLastEntered(self):
         self.store.skipToLastEntered()
+        self.updateLastEntered()
+
+    def skipToLastEnteredWithinMetro(self):
+        self.store.skipToLastEnteredWithinMetro()
+        self.updateLastEntered()
+
+    def updateLastEntered(self):
         last = self.store.curr()
         self.curr_ed = Ed.from_str(list(last.eds)[-1])
         new = next(self.store)
@@ -286,7 +297,7 @@ class Annotator:
         raw = self.jump_input.text
         new_index = int(raw)
 
-        if new_index > 0 and new_index < len(self.store.images):
+        if new_index >= 0 and new_index < len(self.store.images):
             self.store.index = new_index
             new = self.store.curr()
             self.driver.get(new.url)

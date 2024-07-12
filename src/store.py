@@ -163,6 +163,12 @@ class Store:
                 self.index = index
                 break
 
+    def skipToLastEnteredWithinMetro(self):
+        for index, img in reversed(list(enumerate(self.images))):
+            if self.curr().utp_code == img.utp_code and len(img.eds):
+                self.index = index
+                break
+
     def init_db(self):
         self.db.connection.execute("PRAGMA foreign_keys = 1")
 
