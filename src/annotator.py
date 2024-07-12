@@ -63,6 +63,7 @@ class Annotator:
         self.curr_ed = Ed(1)
         options = uc.ChromeOptions()
         options.add_argument("--user-data-dir=selenium")
+        options.add_argument("--disk-cache-size=524300000")
         options.add_argument("--window-size=1504,1573")  # broken?
         options.add_argument("--window-position=1504,25")  # broken?
         self.driver = uc.Chrome(options=options)
