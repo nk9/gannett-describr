@@ -277,7 +277,9 @@ class Annotator:
         stripped = self.ed_input.text.strip()
         self.last_manual_ed_str = stripped
         custom_ed = Ed.from_str(stripped)
-        self.store.addEDToCurrentImage(custom_ed)
+
+        if custom_ed:
+            self.store.addEDToCurrentImage(custom_ed)
 
         return False  # reset the buffer
 

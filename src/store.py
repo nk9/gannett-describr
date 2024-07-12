@@ -34,7 +34,7 @@ class Image:
         self.eds.add(str(ed).upper())
 
     def removeED(self, ed):
-        self.eds.remove(str(ed))
+        self.eds.remove(str(ed).upper())
 
     @property
     def url(self):

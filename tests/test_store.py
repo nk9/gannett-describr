@@ -80,6 +80,15 @@ def test_image_add_ed(oneImage):
     assert list(oneImage.eds) == ["1", "2", "3A"]
 
 
+def test_remove_ed(oneImage):
+    oneImage.addED(1)
+    oneImage.removeED(1)
+    oneImage.addED("None")
+    oneImage.removeED("None")
+
+    assert len(oneImage.eds) == 0
+
+
 def test_image_url(oneImage):
     assert (
         oneImage.url
