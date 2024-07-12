@@ -31,7 +31,7 @@ from src.store import CAT_1930, Image, Store, prev
 # import logging
 # logging.basicConfig(level=10)
 
-DISABLE_DRIVER = True
+DUMMY_DRIVER = False
 SHOW_ED_INPUT = False
 SHOW_JUMP_INPUT = False
 YEARS = ["1930"]
@@ -78,7 +78,7 @@ class Annotator:
         options.add_argument("--window-size=1504,1573")  # broken?
         options.add_argument("--window-position=1504,25")  # broken?
 
-        self.driver = DummyDriver() if DISABLE_DRIVER else uc.Chrome(options=options)
+        self.driver = DummyDriver() if DUMMY_DRIVER else uc.Chrome(options=options)
 
     def buildImageList(self):
         images = []
