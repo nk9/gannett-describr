@@ -29,3 +29,9 @@ def test_from_str_no_char():
 
     assert e.num == 1
     assert e.suff == ""
+
+
+def test_empty_str():
+    e = Ed.from_str("")
+
+    assert e is None

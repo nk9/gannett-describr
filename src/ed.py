@@ -20,4 +20,8 @@ class Ed:
     def from_str(cls, s):
         tail = s.lstrip("0123456789")
         head = s[: len(s) - len(tail)]
-        return cls(int(head), tail)
+
+        if head.isdigit():
+            return cls(int(head), tail)
+
+        return None
