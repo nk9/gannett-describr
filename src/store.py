@@ -15,11 +15,13 @@ FS_IMG_URL = "https://www.familysearch.org/ark:/61903/{ark}?i={i}&cat={cat}"
 
 
 class Image:
-    def __init__(self, year, utp_code, ark, i, cat):
+    def __init__(self, year, utp_code, ark, i, metro_index, metro_image_count, cat):
         self.year = year
         self.utp_code = utp_code
         self.ark = ark
         self.image_index = i
+        self.metro_image_index = metro_index
+        self.metro_image_count = metro_image_count
         self.cat = cat
         self.eds = StableSet([])
         self.db_id = None
@@ -28,7 +30,7 @@ class Image:
         return self.ark == other.ark
 
     def __repr__(self):
-        return f"{self.year} {self.utp_code:15} {self.image_index:4} {self.ark}"
+        return f"{self.year} {self.utp_code:15} {self.image_index:4} {self.ark} [{self.metro_image_index:4}/{self.metro_image_count}]"
 
     def addED(self, ed):
         self.eds.add(str(ed).upper())

@@ -74,7 +74,7 @@ class Annotator:
         self.curr_ed = Ed(1)
         options = uc.ChromeOptions()
         options.add_argument("--user-data-dir=selenium")
-        options.add_argument("--disk-cache-size=524300000")
+        options.add_argument("--disk-cache-size=1024300000")
         options.add_argument("--window-size=1504,1573")  # broken?
         options.add_argument("--window-position=1504,25")  # broken?
 
@@ -101,13 +101,21 @@ class Annotator:
                 if row["year"] in YEARS:
                     start = int(row["start_index"])
                     stop = int(row["stop_index"])
+                    metro_index = 0
                     for index, ark in enumerate(film_info[row["digital_film_no"]]):
                         if index >= start and index <= stop:
                             images.append(
                                 Image(
-                                    row["year"], row["utp_code"], ark, index, CAT_1930
+                                    row["year"],
+                                    row["utp_code"],
+                                    ark,
+                                    index,
+                                    metro_index,
+                                    stop - start,
+                                    CAT_1930,
                                 )
                             )
+                            metro_index += 1
 
         return images
 

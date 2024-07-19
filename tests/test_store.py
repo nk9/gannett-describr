@@ -123,18 +123,18 @@ def test_largest_ed(test_db, oneImage):
 @pytest.fixture
 def manyUtps():
     return [
-        Image("1930", "BirminghamAL", "3:1:3Q9M-CSVR-VSRX-L", 229, "1037259"),
-        Image("1930", "BirminghamAL", "3:1:3Q9M-CSVR-VSR4-H", 230, "1037259"),
-        Image("1930", "BirminghamAL", "3:1:3Q9M-CSVR-VSTT-L", 231, "1037259"),
-        Image("1930", "OaklandCA", "3:1:3QHV-R32D-G1N2", 15, "1037259"),
-        Image("1930", "OaklandCA", "3:1:3QHV-532D-GTWB", 16, "1037259"),
-        Image("1930", "SpringfieldMA", "3:1:3QHV-532D-G9FS-M", 316, "1037259"),
-        Image("1930", "SpringfieldMA", "3:1:3QHV-R32D-G92N-3", 317, "1037259"),
-        Image("1930", "SpringfieldMA", "3:1:3QHV-532D-G9XN-Z", 318, "1037259"),
-        Image("1930", "BostonMA", "3:1:3QHV-532D-G98P-V", 757, "1037259"),
+        Image("1930", "BirminghamAL", "3:1:3Q9M-CSVR-VSRX-L", 229, 0, 3, "1037259"),
+        Image("1930", "BirminghamAL", "3:1:3Q9M-CSVR-VSR4-H", 230, 1, 3, "1037259"),
+        Image("1930", "BirminghamAL", "3:1:3Q9M-CSVR-VSTT-L", 231, 2, 3, "1037259"),
+        Image("1930", "OaklandCA", "3:1:3QHV-R32D-G1N2", 15, 0, 2, "1037259"),
+        Image("1930", "OaklandCA", "3:1:3QHV-532D-GTWB", 16, 1, 2, "1037259"),
+        Image("1930", "SpringfieldMA", "3:1:3QHV-532D-G9FS-M", 316, 0, 3, "1037259"),
+        Image("1930", "SpringfieldMA", "3:1:3QHV-R32D-G92N-3", 317, 1, 3, "1037259"),
+        Image("1930", "SpringfieldMA", "3:1:3QHV-532D-G9XN-Z", 318, 2, 3, "1037259"),
+        Image("1930", "BostonMA", "3:1:3QHV-532D-G98P-V", 757, 0, 1, "1037259"),
     ]
 
 
 @pytest.fixture
 def oneImage():
-    return Image("1930", "BirminghamAL", "3:1:3Q9M-CSVR-VSRX-L", 229, "1037259")
+    return Image("1930", "BirminghamAL", "3:1:3Q9M-CSVR-VSRX-L", 229, 0, 1, "1037259")
