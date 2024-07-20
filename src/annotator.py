@@ -177,6 +177,7 @@ class Annotator:
             self.addNextED()
 
         @kb.add("c")
+        @kb.add("m")
         def _(event):
             self.addCurrED()
 
@@ -326,6 +327,7 @@ class Annotator:
         else:
             self.driver.get(new.url)
             self.curr_ed = Ed(1)
+            self.ed_input.text = ""
 
     def prevImage(self):
         old = self.store.curr()
@@ -336,6 +338,7 @@ class Annotator:
         else:
             self.driver.get(new.url)
             self.curr_ed = Ed.from_str(self.store.largestEDForCurrentMetro())
+            self.ed_input.text = ""
 
     def nextMetro(self):
         new = self.store.nextMetro()
