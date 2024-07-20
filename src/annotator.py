@@ -31,7 +31,6 @@ from src.store import CAT_1930, Image, Store, prev
 # import logging
 # logging.basicConfig(level=10)
 
-DUMMY_DRIVER = False
 SHOW_ED_INPUT = False
 SHOW_JUMP_INPUT = False
 YEARS = ["1930"]
@@ -44,8 +43,20 @@ app = typer.Typer()
 @app.command()
 def annotate_ed_desc_images(
     debug: Annotated[bool, typer.Option("--debug", "-v")] = False,
+    no_chrome: Annotated[bool, typer.Option("--no-chrome", "-d")] = False,
 ):
-    annotator = Annotator(debug)
+    driver = DummyDriver()
+
+    if not no_chrome:
+        options = uc.ChromeOptions()
+        options.add_argument("--user-data-dir=selenium")
+        options.add_argument("--disk-cache-size=1024300000")
+        options.add_argument("--window-size=1504,1573")  # broken?
+        options.add_argument("--window-position=1504,25")  # broken?
+
+        driver = uc.Chrome(options=options)
+
+    annotator = Annotator(debug, driver)
     annotator.process()
     # annotator.write(Path("../gannett-data/fs_eds.parquet"))
 
@@ -64,7 +75,10 @@ class DummyDriver:
 
 
 class Annotator:
-    def __init__(self, debug):
+    def __init__(self, debug, driver):
+        self.driver = driver
+        self.debug = debug
+
         connection = sqlite3.connect("annotated.db")
         cursor = connection.cursor()
         self.store = Store(cursor, self.buildImageList())
@@ -72,13 +86,6 @@ class Annotator:
         self.last_manual_ed_str = ""
 
         self.curr_ed = Ed(1)
-        options = uc.ChromeOptions()
-        options.add_argument("--user-data-dir=selenium")
-        options.add_argument("--disk-cache-size=1024300000")
-        options.add_argument("--window-size=1504,1573")  # broken?
-        options.add_argument("--window-position=1504,25")  # broken?
-
-        self.driver = DummyDriver() if DUMMY_DRIVER else uc.Chrome(options=options)
 
     def buildImageList(self):
         images = []
