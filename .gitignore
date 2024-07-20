@@ -4,5 +4,7 @@
 *.pyc
 
 *.sublime-workspace
+.env
+*.sqlite
 
 annotated.db

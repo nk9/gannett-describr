@@ -16,6 +16,8 @@ undetected-chromedriver = "^3.5.5"
 pytest = "^8.2.2"
 prompt-toolkit = "^3.0.47"
 stableset = "^5.2.1"
+requests-cache = "^1.2.1"
+requests-ratelimiter = "^0.7.0"
 
 
 [build-system]
