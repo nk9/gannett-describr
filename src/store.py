@@ -48,7 +48,7 @@ class Image:
 class Store:
     def __init__(self, db, images):
         self.images = images
-        self.index = 0
+        self.index = None
 
         self.db = db
         self.init_db()
@@ -58,6 +58,9 @@ class Store:
         return self
 
     def __next__(self):
+        if self.index is None:
+            self.index = 0
+
         if self.index + 1 < len(self.images):
             self.index += 1
             return self.images[self.index]
@@ -65,13 +68,16 @@ class Store:
         raise StopIteration
 
     def prev(self):
-        if self.index - 1 >= 0:
+        if self.index is not None and self.index - 1 >= 0:
             self.index -= 1
             return self.images[self.index]
 
         raise StopIteration
 
     def nextMetro(self):
+        if self.index is None:
+            self.index = 0
+
         for index, img in enumerate(self.images):
             if (
                 index < len(self.images) - 1
@@ -84,22 +90,28 @@ class Store:
         return None
 
     def prevMetro(self):
-        for index, img in reversed(list(enumerate(self.images[: self.index + 1]))):
-            if (
-                index >= 1
-                and index <= self.index
-                and img.utp_code != self.images[index - 1].utp_code
-            ):
-                self.index = index - 1
-                return self.images[self.index]
+        if self.index is not None:
+            for index, img in reversed(list(enumerate(self.images[: self.index + 1]))):
+                if (
+                    index >= 1
+                    and index <= self.index
+                    and img.utp_code != self.images[index - 1].utp_code
+                ):
+                    self.index = index - 1
+                    return self.images[self.index]
 
         return None
 
     def curr(self):
-        return self.images[self.index]
+        if self.index is None:
+            index = 0
+        else:
+            index = self.index
+
+        return self.images[index]
 
     def addEDToCurrentImage(self, ed: Ed):
-        image = self.images[self.index]
+        image = self.curr()
         try:
             self.db.execute(
                 """
@@ -142,7 +154,7 @@ class Store:
             self.log.warning(f"Failed to remove last ED for '{image}': {e}")
 
     def largestEDForCurrentMetro(self):
-        image = self.images[self.index]
+        image = self.curr()
 
         res = self.db.execute(
             """
@@ -197,8 +209,8 @@ class Store:
         )
         self.db.connection.commit()
 
-    def populate_db(self, images):
-        for image in images:
+    def populate_db(self):
+        for image in self.images:
             data = (
                 int(image.year),
                 image.utp_code,

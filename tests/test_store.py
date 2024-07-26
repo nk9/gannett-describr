@@ -78,6 +78,13 @@ def test_prev_metro(test_db, manyUtps):
     s.prevMetro() == None
 
 
+def test_prev_metro_from_init(test_db, manyUtps):
+    s = Store(test_db, manyUtps)
+    s.populate_db()
+
+    s.prevMetro() == None
+
+
 def test_image_add_ed(oneImage):
     oneImage.addED(1)
     oneImage.addED(2)
