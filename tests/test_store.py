@@ -17,6 +17,8 @@ def test_db():
 
 def test_store_init(test_db, manyUtps):
     s = Store(test_db, manyUtps)
+    s.populate_db()
+
     old = s.curr()
 
     assert old.utp_code == "BirminghamAL"
@@ -35,6 +37,8 @@ def test_store_init(test_db, manyUtps):
 
 def test_across_utp_boundary(test_db, manyUtps):
     s = Store(test_db, manyUtps)
+    s.populate_db()
+
     old = s.curr()
 
     for _ in range(3):
@@ -46,6 +50,7 @@ def test_across_utp_boundary(test_db, manyUtps):
 
 def test_next_metro(test_db, manyUtps):
     s = Store(test_db, manyUtps)
+    s.populate_db()
 
     img = s.nextMetro()
     assert img.ark == manyUtps[3].ark
@@ -59,6 +64,8 @@ def test_next_metro(test_db, manyUtps):
 
 def test_prev_metro(test_db, manyUtps):
     s = Store(test_db, manyUtps)
+    s.populate_db()
+
     s.index = 8
 
     img = s.prevMetro()
@@ -98,6 +105,7 @@ def test_image_url(oneImage):
 
 def test_skip_to_last_entered(test_db, manyUtps):
     s = Store(test_db, manyUtps)
+    s.populate_db()
     s.images[2].eds.update(["4A", "4B"])
     s.skipToLastEntered()
 
@@ -108,6 +116,7 @@ def test_skip_to_last_entered(test_db, manyUtps):
 
 def test_largest_ed(test_db, oneImage):
     s = Store(test_db, [oneImage])
+    s.populate_db()
 
     ed_name = s.largestEDForCurrentMetro()
 

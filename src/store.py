@@ -52,7 +52,6 @@ class Store:
 
         self.db = db
         self.init_db()
-        self.populate_db(images)
         self.log = get_logger()
 
     def __iter__(self):

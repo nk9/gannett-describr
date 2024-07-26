@@ -6,7 +6,6 @@ from pathlib import Path
 
 import readchar
 import typer
-import undetected_chromedriver as uc
 from dotenv import load_dotenv
 from prompt_toolkit import prompt
 from prompt_toolkit.application import Application
@@ -20,10 +19,10 @@ from prompt_toolkit.layout.controls import FormattedTextControl
 from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.validation import ValidationError, Validator
 from prompt_toolkit.widgets import SearchToolbar, TextArea
-from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from typing_extensions import Annotated
 
+from src.driver import driver
 from src.ed import Ed
 from src.store import CAT_1930, Image, Store, prev
 
@@ -33,7 +32,6 @@ from src.store import CAT_1930, Image, Store, prev
 
 SHOW_ED_INPUT = False
 SHOW_JUMP_INPUT = False
-YEARS = ["1930"]
 
 load_dotenv()
 
@@ -43,20 +41,9 @@ app = typer.Typer()
 @app.command()
 def annotate_ed_desc_images(
     debug: Annotated[bool, typer.Option("--debug", "-v")] = False,
-    no_chrome: Annotated[bool, typer.Option("--no-chrome", "-d")] = False,
+    headless: Annotated[bool, typer.Option("--headless", "-h")] = False,
 ):
-    driver = DummyDriver()
-
-    if not no_chrome:
-        options = uc.ChromeOptions()
-        options.add_argument("--user-data-dir=selenium")
-        options.add_argument("--disk-cache-size=1024300000")
-        options.add_argument("--window-size=1504,1573")  # broken?
-        options.add_argument("--window-position=1504,25")  # broken?
-
-        driver = uc.Chrome(options=options)
-
-    annotator = Annotator(debug, driver)
+    annotator = Annotator(debug, driver(headless))
     annotator.process()
     # annotator.write(Path("../gannett-data/fs_eds.parquet"))
 
@@ -81,7 +68,8 @@ class Annotator:
 
         connection = sqlite3.connect("annotated.db")
         cursor = connection.cursor()
-        self.store = Store(cursor, self.buildImageList())
+        self.store = Store(cursor, buildImageList())
+        self.store.populate_db()
         self.counter = 100
         self.last_manual_ed_str = ""
 
