@@ -24,7 +24,7 @@ from selenium.webdriver.chrome.options import Options
 from typing_extensions import Annotated
 
 from src.driver import driver
-from src.ed import Ed
+from src.ed import Ed, ManualEDList
 from src.store import CAT_1930, Image, Store, prev
 from src.utils import buildImageList
 
@@ -80,7 +80,7 @@ class Annotator:
         _ = next(self.store)  # Tee up correct curr() image
 
         self.counter = 100
-        self.last_manual_ed_str = ""
+        self.manual_eds = ManualEDList()
 
         self.curr_ed = Ed(1)
 
@@ -196,6 +196,22 @@ class Annotator:
         def _(event):
             self.removeLastED()
 
+        @kb.add("up")
+        def _(event):
+            self.prevManualED()
+
+        @kb.add("down")
+        def _(event):
+            self.nextManualED()
+
+        @kb.add("c-m")
+        def _(event):
+            self.removeCurrManualED()
+
+        @kb.add("k")
+        def _(event):
+            self.addCurrentManualED()
+
         @kb.add("c-c")
         @kb.add("q")
         def _(event):
@@ -220,9 +236,7 @@ class Annotator:
 
     def bottom_toolbar(self):
         now = self.store.curr()
-        return (
-            f"<{self.store.index:5}> Cur ED: {self.curr_ed} - Img EDs: {list(now.eds)}"
-        )
+        return f"<{self.store.index:5}> Cur: {self.curr_ed} - Man: {self.manual_eds.currStr} - Img EDs: {list(now.eds)}"
 
     def current_image(self):
         now = self.store.curr()
@@ -248,13 +262,10 @@ class Annotator:
         self.store.addEDToCurrentImage(self.curr_ed)
 
     def addNextCustomED(self):
-        ed = Ed.from_str(self.last_manual_ed_str)
+        new = self.manual_eds.incrementCurr()
 
-        if ed is not None:
-            ed += 1
-
-            self.last_manual_ed_str = str(ed)
-            self.store.addEDToCurrentImage(ed)
+        if new is not None:
+            self.store.addEDToCurrentImage(new)
 
     def addCurrED(self):
         self.store.addEDToCurrentImage(self.curr_ed)
@@ -264,28 +275,6 @@ class Annotator:
 
     def decreaseED(self):
         self.curr_ed -= 1
-
-    def addCustomED(self):
-        global SHOW_ED_INPUT
-        SHOW_ED_INPUT = True
-
-        self.ed_input.text = self.last_manual_ed_str
-        get_app().layout.focus(self.ed_input)
-        buf = self.ed_input.buffer
-        buf.cursor_position = len(self.ed_input.text)
-
-    def accept_ed(self, buffer):
-        global SHOW_ED_INPUT
-        SHOW_ED_INPUT = False
-
-        stripped = self.ed_input.text.strip()
-        self.last_manual_ed_str = stripped
-        custom_ed = Ed.from_str(stripped)
-
-        if custom_ed:
-            self.store.addEDToCurrentImage(custom_ed)
-
-        return False  # reset the buffer
 
     def jumpToIndex(self):
         global SHOW_JUMP_INPUT
@@ -363,6 +352,37 @@ class Annotator:
     def syncImageWithDriver(self):
         cur = self.store.curr()
         self.driver.get(cur.url)
+
+    def addCustomED(self):
+        global SHOW_ED_INPUT
+        SHOW_ED_INPUT = True
+
+        self.ed_input.text = ""
+        get_app().layout.focus(self.ed_input)
+
+    def accept_ed(self, buffer):
+        global SHOW_ED_INPUT
+        SHOW_ED_INPUT = False
+
+        stripped = self.ed_input.text.strip()
+        new = self.manual_eds.add(stripped)
+
+        if new:
+            self.store.addEDToCurrentImage(new)
+
+        return False  # reset the buffer
+
+    def prevManualED(self):
+        self.manual_eds.prev()
+
+    def nextManualED(self):
+        self.manual_eds.next()
+
+    def removeCurrManualED(self):
+        self.manual_eds.removeCurr()
+
+    def addCurrentManualED(self):
+        self.store.addEDToCurrentImage(self.manual_eds.curr())
 
 
 class NumberValidator(Validator):
