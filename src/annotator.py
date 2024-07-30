@@ -9,7 +9,11 @@ from prompt_toolkit.application import Application
 from prompt_toolkit.application.current import get_app
 from prompt_toolkit.data_structures import Point
 from prompt_toolkit.filters import Condition
-from prompt_toolkit.key_binding import ConditionalKeyBindings, KeyBindings
+from prompt_toolkit.key_binding import (
+    ConditionalKeyBindings,
+    KeyBindings,
+    merge_key_bindings,
+)
 from prompt_toolkit.layout import ConditionalContainer, DynamicContainer
 from prompt_toolkit.layout.containers import HSplit, Window
 from prompt_toolkit.layout.controls import FormattedTextControl
@@ -51,6 +55,11 @@ def notShowingInput():
     return not (SHOW_ED_INPUT or SHOW_JUMP_INPUT)
 
 
+@Condition
+def showingInput():
+    return SHOW_ED_INPUT or SHOW_JUMP_INPUT
+
+
 class DummyDriver:
     def get(self, url):
         pass
@@ -68,6 +77,8 @@ class Annotator:
         cursor = connection.cursor()
         self.store = Store(cursor, buildImageList())
         self.store.populate_db()
+        _ = next(self.store)  # Tee up correct curr() image
+
         self.counter = 100
         self.last_manual_ed_str = ""
 
@@ -79,8 +90,12 @@ class Annotator:
         bindings = self.setupBindings()
 
         application = Application(
-            key_bindings=bindings, full_screen=False, layout=self.layout()
+            key_bindings=bindings,
+            full_screen=False,
+            layout=self.layout(),
         )
+        application.timeoutlen = 0
+        application.ttimeoutlen = 0
         application.run()
 
     def layout(self):
@@ -131,7 +146,7 @@ class Annotator:
             self.addNextED()
 
         @kb.add("c")
-        @kb.add("m")
+        @kb.add("/")
         def _(event):
             self.addCurrED()
 
@@ -139,11 +154,17 @@ class Annotator:
         def _(event):
             self.addCustomED()
 
+        @kb.add("m")
+        def _(event):
+            self.addNextCustomED()
+
         @kb.add("]")
+        @kb.add(".")
         def _(event):
             self.nextImage()
 
         @kb.add("[")
+        @kb.add(",")
         def _(event):
             self.prevImage()
 
@@ -178,9 +199,20 @@ class Annotator:
         @kb.add("c-c")
         @kb.add("q")
         def _(event):
-            get_app().exit(result=True)
+            event.app.exit(result=True)
 
-        return ConditionalKeyBindings(kb, notShowingInput)
+        inputKB = KeyBindings()
+
+        @inputKB.add("escape")
+        def _(event):
+            self.dismissInput()
+
+        return merge_key_bindings(
+            [
+                ConditionalKeyBindings(kb, notShowingInput),
+                ConditionalKeyBindings(inputKB, showingInput),
+            ]
+        )
 
     def top_toolbar(self):
         now = self.store.curr()
@@ -214,6 +246,15 @@ class Annotator:
     def addNextED(self):
         self.curr_ed += 1
         self.store.addEDToCurrentImage(self.curr_ed)
+
+    def addNextCustomED(self):
+        ed = Ed.from_str(self.last_manual_ed_str)
+
+        if ed is not None:
+            ed += 1
+
+            self.last_manual_ed_str = str(ed)
+            self.store.addEDToCurrentImage(ed)
 
     def addCurrED(self):
         self.store.addEDToCurrentImage(self.curr_ed)
@@ -268,6 +309,12 @@ class Annotator:
             self.driver.get(new.url)
 
         return False  # reset the buffer
+
+    def dismissInput(self):
+        global SHOW_JUMP_INPUT, SHOW_ED_INPUT
+
+        SHOW_ED_INPUT = False
+        SHOW_JUMP_INPUT = False
 
     def removeLastED(self):
         self.store.removeLastED()

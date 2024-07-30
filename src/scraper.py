@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 from typing_extensions import Annotated
 
 from src.be_nice import CachedLimiterSession
+from src.driver import driver
 
 # Enable logging for Requests, etc
 # logging.basicConfig(level=logging.DEBUG)
