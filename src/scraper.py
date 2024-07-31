@@ -53,15 +53,8 @@ class Scraper:
         self.cursor = self.connection.cursor()
         self.store = Store(self.cursor, buildImageList())
 
-        # rate = RequestRate(2, Duration.SECOND * 61)
-        # limiter = Limiter(rate)
-
     def scrape_ed_desc_images(self):
-        # arks = self.cursor.execute(
-        #     "SELECT year, utp_code, ark, cat FROM images ORDER BY id"
-        # ).fetchall()
         out_path = Path("../ed-desc-img/1930/")
-        # count = len(arks)
 
         # Let the user sign in
         self.driver.get(
@@ -130,31 +123,6 @@ class Scraper:
             span.dispatchEvent(click);
         """
         )
-
-
-def print_roundtrip(response, *args, **kwargs):
-    format_headers = lambda d: "\n".join(f"{k}: {v}" for k, v in d.items())
-    print(
-        textwrap.dedent(
-            """
-        ---------------- request ----------------
-        {req.method} {req.url}
-        {reqhdrs}
-
-        {req.body}
-        ---------------- response ----------------
-        {res.status_code} {res.reason} {res.url}
-        {reshdrs}
-
-        {res.text}
-    """
-        ).format(
-            req=response.request,
-            res=response,
-            reqhdrs=format_headers(response.request.headers),
-            reshdrs=format_headers(response.headers),
-        )
-    )
 
 
 if __name__ == "__main__":
