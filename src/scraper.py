@@ -9,6 +9,7 @@ import sqlite3
 import textwrap
 import time
 from pathlib import Path
+from datetime import timedelta
 
 import typer
 from dotenv import load_dotenv
@@ -92,8 +93,13 @@ class Scraper:
                         header, encoded = data_url.split(",", 1)
                         image_data = base64.b64decode(encoded)
 
-                        if len(image_data) < 1_000_000:
-                            time.sleep(attempt * 10 * 60)  # Wait for awhile
+                        if len(image_data) < 50_000:
+                            delay = attempt * 10 * 60
+                            delta = timedelta(seconds=delay)
+                            print(
+                                f"Received truncated response, initiating {delta} delay"
+                            )
+                            time.sleep(delay)  # Wait for awhile
                         else:
                             with open(ark_path, "wb") as file:
                                 print(f"Writing  {last_3}")
