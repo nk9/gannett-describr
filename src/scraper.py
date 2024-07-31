@@ -66,54 +66,58 @@ class Scraper:
         if val == "q":
             return
 
-        while img := self.nextImage():
+        last = None
+
+        for img in self.store:
+            attempt = 0
+
             short_ark = img.ark[4:]
             ark_path = out_path / str(img.year) / img.utp_code / f"{short_ark}.png"
             ark_path.parent.mkdir(parents=True, exist_ok=True)
             last_3 = "/".join(ark_path.parts[-3:])
 
             if not ark_path.is_file() or ark_path.stat().st_size < 50_000:
-                self.driver.get(img.url)
-                time.sleep(10)  # Let the image fully load
+                while True:
+                    attempt += 1
+                    self.loadImagePage(last, img)
+                    time.sleep(10)  # Let the image fully load
 
-                try:
-                    canvas = self.driver.find_element(
-                        By.CSS_SELECTOR, ".openseadragon-canvas canvas"
-                    )
-                    data_url = self.driver.execute_script(
-                        "return arguments[0].toDataURL()", canvas
-                    )
-                    header, encoded = data_url.split(",", 1)
-                    image_data = base64.b64decode(encoded)
+                    try:
+                        canvas = self.driver.find_element(
+                            By.CSS_SELECTOR, ".openseadragon-canvas canvas"
+                        )
+                        data_url = self.driver.execute_script(
+                            "return arguments[0].toDataURL()", canvas
+                        )
+                        header, encoded = data_url.split(",", 1)
+                        image_data = base64.b64decode(encoded)
 
-                    with open(ark_path, "wb") as file:
-                        print(f"Writing  {last_3}")
-                        file.write(image_data)
+                        if len(image_data) < 1_000_000:
+                            time.sleep(attempt * 10 * 60)  # Wait for awhile
+                        else:
+                            with open(ark_path, "wb") as file:
+                                print(f"Writing  {last_3}")
+                                file.write(image_data)
+                                last = img
+                                break  # out of the infinite while
 
-                except Exception as e:
-                    logging.warn(f"Failed to find download link for {img.ark}")
+                    except Exception as e:
+                        logging.warn(f"Failed to find download link for {img.ark}")
 
                 time.sleep(random.randint(10, 45))
             else:
                 print(f"Skipping {last_3}")
 
-    def nextImage(self):
-        old = self.store.curr()
-        new = next(self.store)
-        is_first = self.store.index == 1
-
-        if new:
+    def loadImagePage(self, last, img):
+        if img:
             if (
-                old.utp_code == new.utp_code
-                and new.image_index == old.image_index + 1
-                and not is_first  #
+                last is not None
+                and last.utp_code == img.utp_code
+                and img.image_index == last.image_index + 1
             ):
                 self.clickSpanWithClass("next")
             else:
-                self.driver.get(new.url)
-            return new
-
-        return None
+                self.driver.get(img.url)
 
     def clickSpanWithClass(self, name):
         self.driver.execute_script(
