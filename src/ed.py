@@ -58,7 +58,7 @@ class ManualEDList:
             else:
                 self.index = (self.index - 1) % len(self.list)
 
-    def add(self, manual_ed):
+    def addSlot(self, manual_ed):
         new = Ed.from_str(manual_ed)
 
         if new is not None:

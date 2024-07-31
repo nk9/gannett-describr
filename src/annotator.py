@@ -206,11 +206,11 @@ class Annotator:
 
         @kb.add("c-m")
         def _(event):
-            self.removeCurrManualED()
+            self.removeCurrManualEDSlot()
 
         @kb.add("k")
         def _(event):
-            self.addCurrentManualED()
+            self.addCurrManualED()
 
         @kb.add("c-c")
         @kb.add("q")
@@ -365,7 +365,7 @@ class Annotator:
         SHOW_ED_INPUT = False
 
         stripped = self.ed_input.text.strip()
-        new = self.manual_eds.add(stripped)
+        new = self.manual_eds.addSlot(stripped)
 
         if new:
             self.store.addEDToCurrentImage(new)
@@ -378,10 +378,10 @@ class Annotator:
     def nextManualED(self):
         self.manual_eds.next()
 
-    def removeCurrManualED(self):
+    def removeCurrManualEDSlot(self):
         self.manual_eds.removeCurr()
 
-    def addCurrentManualED(self):
+    def addCurrManualED(self):
         self.store.addEDToCurrentImage(self.manual_eds.curr())
 
 

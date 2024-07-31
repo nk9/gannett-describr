@@ -46,15 +46,15 @@ def test_eq():
 
 def test_ed_list():
     m = ManualEDList()
-    m.add("549")
+    m.addSlot("549")
 
     assert m.curr() == Ed.from_str("549")
 
 
 def test_ed_list_increment():
     m = ManualEDList()
-    m.add("549")
-    m.add("123")
+    m.addSlot("549")
+    m.addSlot("123")
 
     assert m.curr() == Ed.from_str("123")
 
@@ -65,8 +65,8 @@ def test_ed_list_increment():
 
 def test_ed_list_prev():
     m = ManualEDList()
-    m.add("123")
-    m.add("456")
+    m.addSlot("123")
+    m.addSlot("456")
 
     m.prev()
     m.prev()
