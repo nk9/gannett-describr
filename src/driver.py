@@ -12,7 +12,7 @@ def driver(use_dummy):
         options.add_argument("--window-size=1504,1573")  # broken?
         options.add_argument("--window-position=1504,25")  # broken?
 
-        driver = uc.Chrome(options=options)
+        driver = uc.Chrome(options=options, enable_cdp_events=True)
 
     return driver
 
