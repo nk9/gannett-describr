@@ -52,7 +52,8 @@ class Scraper:
         self.image_response_ids = set()
         self.out_path = Path("../ed-desc-img/1930/")  # TODO: make this dynamic
 
-        driver.add_cdp_listener("Network.responseReceived", self.response_received)
+        self.driver.add_cdp_listener("Network.responseReceived", self.response_received)
+        self.driver.add_cdp_listener("Network.loadingFinished", self.loading_finished)
 
         db_path = "annotated.db"
         self.connection = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
@@ -65,6 +66,12 @@ class Scraper:
         req_id = params["requestId"]
 
         if params["type"] == "Image" and "/dist.jpg?" in res["url"]:
+            self.image_response_ids.add(req_id)
+
+    def loading_finished(self, event):
+        req_id = event["params"]["requestId"]
+
+        if req_id in self.image_response_ids:
             try:
                 body = self.driver.execute_cdp_cmd(
                     "Network.getResponseBody", {"requestId": req_id}
@@ -91,6 +98,8 @@ class Scraper:
         if val == "q":
             return
 
+        last = self.store.curr()
+
         for img in self.store:
             attempt = 0
 
@@ -100,16 +109,33 @@ class Scraper:
 
             if not ark_path.is_file() or ark_path.stat().st_size < 50_000:
                 print(f"Loading  {last_3}…", end="", flush=True)
-                self.driver.get(img.url)
+
+                self.load_next(last, img)
+                last = img
 
                 # Let the image fully load
-                time.sleep(61)
+                time.sleep(random.randint(15, 70))
             else:
                 print(f"Skipping {last_3}")
 
     def image_path(self, img):
         short_ark = img.ark[4:]
         return self.out_path / str(img.year) / img.utp_code / f"{short_ark}.png"
+
+    def load_next(self, old, new):
+        if old.utp_code == new.utp_code and new.image_index == old.image_index + 1:
+            self.clickSpanWithClass("next")
+        else:
+            self.driver.get(new.url)
+
+    def clickSpanWithClass(self, name):
+        self.driver.execute_script(
+            f"""
+            var span = window.document.getElementsByClassName('{name}')[0];
+            var click = new Event('click');
+            span.dispatchEvent(click);
+        """
+        )
 
 
 if __name__ == "__main__":
