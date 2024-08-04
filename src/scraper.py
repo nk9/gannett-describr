@@ -80,10 +80,15 @@ class Scraper:
                 img = self.store.curr()
                 image_path = self.image_path(img)
                 image_data = base64.b64decode(body["body"])
+                # print(image_data)
 
-                with open(image_path, "wb") as file:
-                    file.write(image_data)
-                    print(" Written.")
+                if len(image_data) < 20_000:
+                    print("\nWaiting 45 minutes…")
+                    time.sleep(45 * 60)  # 45 min break
+                else:
+                    with open(image_path, "wb") as file:
+                        file.write(image_data)
+                        print(" Written.")
             except Exception as e:
                 print("Failed:", e)
 
@@ -99,24 +104,28 @@ class Scraper:
             return
 
         last = self.store.curr()
+        load_count = 0
 
         for img in self.store:
-            attempt = 0
-
             ark_path = self.image_path(img)
             ark_path.parent.mkdir(parents=True, exist_ok=True)
             last_3 = "/".join(ark_path.parts[-3:])
 
-            if not ark_path.is_file() or ark_path.stat().st_size < 50_000:
-                print(f"Loading  {last_3}…", end="", flush=True)
+            if not ark_path.is_file() or ark_path.stat().st_size < 20_000:
+                print(f"[{load_count:5}] Loading  {last_3}…", end="", flush=True)
 
                 self.load_next(last, img)
+                load_count += 1
                 last = img
 
                 # Let the image fully load
-                time.sleep(random.randint(15, 70))
+                if load_count % 650 == 0:
+                    print("Taking 90 min break to avoid throttling")
+                    time.sleep(90 * 60)
+                else:
+                    time.sleep(random.randint(15, 45))
             else:
-                print(f"Skipping {last_3}")
+                print(f"        Skipping {last_3}")
 
     def image_path(self, img):
         short_ark = img.ark[4:]
