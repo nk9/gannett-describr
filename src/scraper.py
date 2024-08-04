@@ -8,7 +8,7 @@ import re
 import sqlite3
 import textwrap
 import time
-from datetime import timedelta
+import datetime as dt
 from pathlib import Path
 from pprint import pformat
 
@@ -29,6 +29,7 @@ from src.utils import buildImageList
 # logging.basicConfig(level=logging.DEBUG)
 
 ED_DESC_URL = "https://www.familysearch.org/search/image/download?uri=https%3A%2F%2Fsg30p0.familysearch.org%2Fservice%2Frecords%2Fstorage%2Fdascloud%2Fdas%2Fv2%2F{}"
+LOAD_LIMIT = 650
 
 load_dotenv()
 
@@ -50,6 +51,7 @@ class Scraper:
         self.debug = debug
         self.driver = driver
         self.image_response_ids = set()
+        self.written_arks = set()
         self.out_path = Path("../ed-desc-img/1930/")  # TODO: make this dynamic
 
         self.driver.add_cdp_listener("Network.responseReceived", self.response_received)
@@ -82,12 +84,10 @@ class Scraper:
                 image_data = base64.b64decode(body["body"])
                 # print(image_data)
 
-                if len(image_data) < 20_000:
-                    print("\nWaiting 45 minutes…")
-                    time.sleep(45 * 60)  # 45 min break
-                else:
+                if len(image_data) > 20_000:
                     with open(image_path, "wb") as file:
                         file.write(image_data)
+                        self.written_arks.add(img.ark)
                         print(" Written.")
             except Exception as e:
                 print("Failed:", e)
@@ -119,11 +119,13 @@ class Scraper:
                 last = img
 
                 # Let the image fully load
-                if load_count % 650 == 0:
-                    print("Taking 90 min break to avoid throttling")
-                    time.sleep(90 * 60)
-                else:
-                    time.sleep(random.randint(15, 45))
+                time.sleep(random.randint(15, 30))
+
+                if load_count % LOAD_LIMIT == 0 or img.ark not in self.written_arks:
+                    target = dt.datetime.now() + dt.timedelta(minutes=61)
+                    print(f"Taking a break to avoid throttling. Resuming at {target}…")
+                    time.sleep(61 * 60)
+
             else:
                 print(f"        Skipping {last_3}")
 
