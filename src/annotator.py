@@ -25,7 +25,7 @@ from typing_extensions import Annotated
 
 from src.driver import driver
 from src.ed import Ed, ManualEDList
-from src.store import CAT_1930, Image, Store, prev
+from src.store import Image, Store, prev
 from src.utils import buildImageList
 
 # Turn on to get verbose Selenium logs

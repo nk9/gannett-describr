@@ -2,9 +2,7 @@ import csv
 import json
 import re
 from pathlib import Path
-from src.store import CAT_1930, Image
-
-YEARS = ["1930"]
+from src.store import Image
 
 
 def buildImageList():
@@ -25,7 +23,7 @@ def buildImageList():
 
     with open(data_dir / "ed_descr_nums.csv") as csvf:
         for row in csv.DictReader(csvf):
-            if row["year"] in YEARS:
+            if row["digital_film_no"]:
                 start = int(row["start_index"])
                 stop = int(row["stop_index"])
                 metro_index = 0
@@ -39,7 +37,7 @@ def buildImageList():
                                 index,
                                 metro_index,
                                 stop - start,
-                                CAT_1930,
+                                row["collection"],
                             )
                         )
                         metro_index += 1

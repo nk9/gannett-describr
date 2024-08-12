@@ -10,7 +10,6 @@ from src.log import get_logger
 
 prev = lambda obj: obj.prev()
 
-CAT_1930 = "1037259"
 FS_IMG_URL = "https://www.familysearch.org/ark:/61903/{ark}?i={i}&cat={cat}"
 
 
@@ -225,12 +224,12 @@ class Store:
                 data,
             )
             res = self.db.execute(
-                """SELECT id FROM images WHERE ark = ?""", (image.ark,)
+                "SELECT id FROM images WHERE ark = ?", (image.ark,)
             ).fetchone()
             image.db_id = res[0]
 
             res = self.db.execute(
-                """SELECT name FROM eds WHERE image_id = ?""", (image.db_id,)
+                "SELECT name FROM eds WHERE image_id = ?", (image.db_id,)
             ).fetchall()
             image.eds.update([e[0] for e in res])
 
