@@ -43,6 +43,12 @@ class Image:
             {"ark": self.ark, "i": self.image_index, "cat": self.cat}
         )
 
+    @property
+    def local_url(self):
+        short_ark = self.ark[4:]
+        path = Path("../ed-desc-img") / self.year / self.utp_code / f"{short_ark}.png"
+        return path.resolve().as_uri()
+
 
 class Store:
     def __init__(self, db, images):

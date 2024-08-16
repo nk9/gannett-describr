@@ -34,6 +34,7 @@ from src.utils import buildImageList
 
 SHOW_ED_INPUT = False
 SHOW_JUMP_INPUT = False
+SET_CURRENT_ED = False
 
 load_dotenv()
 
@@ -43,7 +44,9 @@ app = typer.Typer()
 @app.command()
 def annotate_ed_desc_images(
     debug: Annotated[bool, typer.Option("--debug", "-v")] = False,
-    headless: Annotated[bool, typer.Option("--headless", "-h")] = False,
+    headless: Annotated[
+        bool, typer.Option("--headless", "-h", "--dummy", "-d")
+    ] = False,
 ):
     annotator = Annotator(debug, driver(headless))
     annotator.process()
@@ -85,7 +88,7 @@ class Annotator:
         self.curr_ed = Ed(1)
 
     def process(self):
-        self.driver.get(self.store.curr().url)  # ("https://apple.com")  #
+        self.driver.get(self.store.curr().local_url)  # ("https://apple.com")  #
 
         bindings = self.setupBindings()
 
@@ -145,8 +148,7 @@ class Annotator:
         def _(event):
             self.addNextED()
 
-        @kb.add("c")
-        @kb.add("/")
+        @kb.add("m")
         def _(event):
             self.addCurrED()
 
@@ -154,16 +156,25 @@ class Annotator:
         def _(event):
             self.addCustomED()
 
-        @kb.add("m")
+        @kb.add("c-e")
+        def _(event):
+            global SET_CURRENT_ED
+            SET_CURRENT_ED = True
+
+            self.addCustomED()
+
+        @kb.add("N")
         def _(event):
             self.addNextCustomED()
 
         @kb.add("]")
+        @kb.add(">")
         @kb.add(".")
         def _(event):
             self.nextImage()
 
         @kb.add("[")
+        @kb.add("<")
         @kb.add(",")
         def _(event):
             self.prevImage()
@@ -176,7 +187,7 @@ class Annotator:
         def _(event):
             self.prevMetro()
 
-        @kb.add("+")
+        @kb.add("=")
         def _(event):
             self.increaseED()
 
@@ -184,7 +195,15 @@ class Annotator:
         def _(event):
             self.decreaseED()
 
-        @kb.add("=")
+        @kb.add("+")
+        def _(event):
+            self.increaseManualED()
+
+        @kb.add("_")
+        def _(event):
+            self.decreaseManualED()
+
+        @kb.add("`")
         def _(event):
             self.syncImageWithDriver()
 
@@ -198,23 +217,28 @@ class Annotator:
 
         @kb.add("up")
         def _(event):
-            self.prevManualED()
+            self.prevManualEDSlot()
 
         @kb.add("down")
         def _(event):
-            self.nextManualED()
+            self.nextManualEDSlot()
 
         @kb.add("c-m")
         def _(event):
             self.removeCurrManualEDSlot()
 
-        @kb.add("k")
+        @kb.add("M")
         def _(event):
             self.addCurrManualED()
+
+        @kb.add("u")
+        def _(event):
+            self.loadRemoteURL()
 
         @kb.add("c-c")
         @kb.add("q")
         def _(event):
+            self.driver.quit()
             event.app.exit(result=True)
 
         inputKB = KeyBindings()
@@ -255,11 +279,17 @@ class Annotator:
         self.curr_ed = Ed.from_str(list(last.eds)[-1])
         new = next(self.store)
 
-        self.driver.get(new.url)
+        self.driver.get(new.local_url)
 
     def addNextED(self):
-        self.curr_ed += 1
-        self.store.addEDToCurrentImage(self.curr_ed)
+        curr = self.store.curr()
+
+        if curr.metro_image_index == 0 and len(list(curr.eds)) == 0:
+            # Special case: let "n" add 1 if it's really the first one
+            self.store.addEDToCurrentImage(Ed(1))
+        else:
+            self.curr_ed += 1
+            self.store.addEDToCurrentImage(self.curr_ed)
 
     def addNextCustomED(self):
         new = self.manual_eds.incrementCurr()
@@ -273,8 +303,14 @@ class Annotator:
     def increaseED(self):
         self.curr_ed += 1
 
+    def increaseManualED(self):
+        self.manual_eds.incrementCurr()
+
     def decreaseED(self):
         self.curr_ed -= 1
+
+    def decreaseManualED(self):
+        self.manual_eds.decrementCurr()
 
     def jumpToIndex(self):
         global SHOW_JUMP_INPUT
@@ -295,7 +331,7 @@ class Annotator:
         if new_index >= 0 and new_index < len(self.store.images):
             self.store.index = new_index
             new = self.store.curr()
-            self.driver.get(new.url)
+            self.driver.get(new.local_url)
 
         return False  # reset the buffer
 
@@ -311,33 +347,29 @@ class Annotator:
     def nextImage(self):
         old = self.store.curr()
         new = next(self.store)
+        self.driver.get(new.local_url)
 
-        if old.utp_code == new.utp_code:
-            self.clickSpanWithClass("next")
-        else:
-            self.driver.get(new.url)
+        if old.utp_code != new.utp_code:
             self.curr_ed = Ed(1)
             self.ed_input.text = ""
 
     def prevImage(self):
         old = self.store.curr()
         new = prev(self.store)
+        self.driver.get(new.local_url)
 
-        if old.utp_code == new.utp_code:
-            self.clickSpanWithClass("previous")
-        else:
-            self.driver.get(new.url)
+        if old.utp_code != new.utp_code:
             self.curr_ed = Ed.from_str(self.store.largestEDForCurrentMetro())
             self.ed_input.text = ""
 
     def nextMetro(self):
         new = self.store.nextMetro()
-        self.driver.get(new.url)
+        self.driver.get(new.local_url)
         self.curr_ed = Ed(1)
 
     def prevMetro(self):
         new = self.store.prevMetro()
-        self.driver.get(new.url)
+        self.driver.get(new.local_url)
         self.curr_ed = Ed.from_str(self.store.largestEDForCurrentMetro())
 
     def clickSpanWithClass(self, name):
@@ -351,7 +383,7 @@ class Annotator:
 
     def syncImageWithDriver(self):
         cur = self.store.curr()
-        self.driver.get(cur.url)
+        self.driver.get(cur.local_url)
 
     def addCustomED(self):
         global SHOW_ED_INPUT
@@ -363,19 +395,26 @@ class Annotator:
     def accept_ed(self, buffer):
         global SHOW_ED_INPUT
         SHOW_ED_INPUT = False
+        global SET_CURRENT_ED
 
+        new = None
         stripped = self.ed_input.text.strip()
-        new = self.manual_eds.addSlot(stripped)
+
+        if SET_CURRENT_ED:
+            new = self.curr_ed = Ed.from_str(stripped)
+            SET_CURRENT_ED = False
+        else:
+            new = self.manual_eds.addSlot(stripped)
 
         if new:
             self.store.addEDToCurrentImage(new)
 
         return False  # reset the buffer
 
-    def prevManualED(self):
+    def prevManualEDSlot(self):
         self.manual_eds.prev()
 
-    def nextManualED(self):
+    def nextManualEDSlot(self):
         self.manual_eds.next()
 
     def removeCurrManualEDSlot(self):
@@ -383,6 +422,12 @@ class Annotator:
 
     def addCurrManualED(self):
         self.store.addEDToCurrentImage(self.manual_eds.curr())
+
+    def loadRemoteURL(self):
+        curr = self.store.curr()
+
+        self.driver.switch_to.new_window()
+        self.driver.get(curr.url)
 
 
 class NumberValidator(Validator):

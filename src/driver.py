@@ -18,8 +18,21 @@ def driver(use_dummy):
 
 
 class DummyDriver:
-    def get(self, url):
-        pass
+    # def get(self, url):
+    #     pass
 
-    def execute_script(self, script):
-        pass
+    # def execute_script(self, script):
+    #     pass
+
+    # def add_cdp_listener(self, message, func):
+    #     pass
+
+    # def quit(self):
+    #     pass
+    def __getattr__(self, name):
+        # Return self so that any attribute or method access returns the object itself
+        return self
+
+    def __call__(self, *args, **kwargs):
+        # Allow the object to be called like a function and do nothing
+        return self

@@ -76,6 +76,15 @@ class ManualEDList:
 
         return ed
 
+    def decrementCurr(self):
+        ed = self.curr()
+
+        if ed is not None:
+            ed -= 1
+            self.list[self.index] = ed
+
+        return ed
+
     def curr(self):
         if self.index is None or len(self.list) == 0:
             return None
