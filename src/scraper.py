@@ -52,7 +52,7 @@ class Scraper:
         self.driver = driver
         self.image_response_ids = set()
         self.written_arks = set()
-        self.out_path = Path("../ed-desc-img/1930/")  # TODO: make this dynamic
+        self.out_path = Path("../ed-desc-img/")  # TODO: make this dynamic
 
         self.driver.add_cdp_listener("Network.responseReceived", self.response_received)
         self.driver.add_cdp_listener("Network.loadingFinished", self.loading_finished)
