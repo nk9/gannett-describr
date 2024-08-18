@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "py-ed-desc-scraper"
+name = "gannett-describr"
 version = "0.1.0"
 description = ""
 authors = ["Nick Kocharhook <nick@kocharhook.com>"]
 readme = "README.md"
-packages = [{include = "py_ed_desc_scraper"}]
+packages = [{include = "gannett_describr"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
