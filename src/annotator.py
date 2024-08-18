@@ -419,7 +419,9 @@ class Annotator:
 
         match self.ed_input_state:
             case EDState.CURRENT_ED:
-                new = self.curr_ed = Ed.from_str(stripped)
+                new = Ed.from_str(stripped)
+                if new:
+                    self.curr_ed = new
             case EDState.CUSTOM_ED:
                 new = self.manual_eds.addSlot(stripped)
             case EDState.FILL_TO_ED:
