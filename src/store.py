@@ -177,7 +177,7 @@ class Store:
 
     def skipToLastEntered(self):
         for index, img in reversed(list(enumerate(self.images))):
-            if len(img.eds):
+            if img.year != "1880" and len(img.eds):
                 self.index = index
                 break
 
