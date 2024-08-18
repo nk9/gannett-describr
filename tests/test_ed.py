@@ -44,6 +44,17 @@ def test_eq():
     assert e1 == e2
 
 
+def test_lt():
+    e1 = Ed(1)
+    e5 = Ed(5)
+    e5a = Ed.from_str("5A")
+    e5b = Ed.from_str("5B")
+
+    assert e1 < e5
+    assert e5 < e5a
+    assert e5a < e5b
+
+
 def test_ed_list():
     m = ManualEDList()
     m.addSlot("549")

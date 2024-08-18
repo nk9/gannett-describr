@@ -22,6 +22,14 @@ class Ed:
 
         return self.num == other.num and self.suff == other.suff
 
+    def __lt__(self, other):
+        if not isinstance(other, Ed):
+            return NotImplemented
+
+        return self.num < other.num or (
+            self.num == other.num and self.suff < other.suff
+        )
+
     @classmethod
     def from_str(cls, s):
         if len(s):
