@@ -235,7 +235,8 @@ class Store:
             image.db_id = res[0]
 
             res = self.db.execute(
-                "SELECT name FROM eds WHERE image_id = ?", (image.db_id,)
+                "SELECT name FROM eds WHERE image_id = ? ORDER BY eds.id",
+                (image.db_id,),
             ).fetchall()
             image.eds.update([e[0] for e in res])
 
