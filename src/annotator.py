@@ -1,4 +1,5 @@
 import sqlite3
+from enum import Enum, auto
 from pathlib import Path
 
 import readchar
@@ -32,9 +33,16 @@ from src.utils import buildImageList
 # import logging
 # logging.basicConfig(level=10)
 
-SHOW_ED_INPUT = False
-SHOW_JUMP_INPUT = False
-SET_CURRENT_ED = False
+SHOWING_ED_INPUT = False
+SHOWING_JUMP_INPUT = False
+
+
+class EDState(Enum):
+    NONE = auto()
+    CURRENT_ED = auto()
+    CUSTOM_ED = auto()
+    FILL_TO_ED = auto()
+
 
 load_dotenv()
 
@@ -55,12 +63,12 @@ def annotate_ed_desc_images(
 
 @Condition
 def notShowingInput():
-    return not (SHOW_ED_INPUT or SHOW_JUMP_INPUT)
+    return not (SHOWING_ED_INPUT or SHOWING_JUMP_INPUT)
 
 
 @Condition
 def showingInput():
-    return SHOW_ED_INPUT or SHOW_JUMP_INPUT
+    return SHOWING_ED_INPUT or SHOWING_JUMP_INPUT
 
 
 class DummyDriver:
@@ -75,6 +83,7 @@ class Annotator:
     def __init__(self, debug, driver):
         self.driver = driver
         self.debug = debug
+        self.ed_input_state = EDState.NONE
 
         connection = sqlite3.connect("annotated.db")
         cursor = connection.cursor()
@@ -124,9 +133,11 @@ class Annotator:
                 [
                     Window(FormattedTextControl(self.top_toolbar()), height=1),
                     Window(FormattedTextControl(self.bottom_toolbar()), height=1),
-                    ConditionalContainer(content=self.ed_input, filter=SHOW_ED_INPUT),
                     ConditionalContainer(
-                        content=self.jump_input, filter=SHOW_JUMP_INPUT
+                        content=self.ed_input, filter=SHOWING_ED_INPUT
+                    ),
+                    ConditionalContainer(
+                        content=self.jump_input, filter=SHOWING_JUMP_INPUT
                     ),
                 ]
             )
@@ -154,14 +165,15 @@ class Annotator:
 
         @kb.add("e")
         def _(event):
-            self.addCustomED()
+            self.display_ed_input(EDState.CURRENT_ED)
 
-        @kb.add("c-e")
+        @kb.add("E")
         def _(event):
-            global SET_CURRENT_ED
-            SET_CURRENT_ED = True
+            self.display_ed_input(EDState.CUSTOM_ED)
 
-            self.addCustomED()
+        @kb.add("f")
+        def _(event):
+            self.display_ed_input(EDState.FILL_TO_ED)
 
         @kb.add("N")
         def _(event):
@@ -284,7 +296,11 @@ class Annotator:
     def addNextED(self):
         curr = self.store.curr()
 
-        if curr.metro_image_index == 0 and len(list(curr.eds)) == 0:
+        if (
+            curr.metro_image_index == 0
+            and len(list(curr.eds)) == 0
+            and self.curr_ed == Ed(1)
+        ):
             # Special case: let "n" add 1 if it's really the first one
             self.store.addEDToCurrentImage(Ed(1))
         else:
@@ -313,8 +329,8 @@ class Annotator:
         self.manual_eds.decrementCurr()
 
     def jumpToIndex(self):
-        global SHOW_JUMP_INPUT
-        SHOW_JUMP_INPUT = True
+        global SHOWING_JUMP_INPUT
+        SHOWING_JUMP_INPUT = True
 
         self.jump_input.text = str(self.store.index)
         get_app().layout.focus(self.jump_input)
@@ -322,8 +338,8 @@ class Annotator:
         buf.cursor_position = len(self.jump_input.text)
 
     def accept_jump(self, buffer):
-        global SHOW_JUMP_INPUT
-        SHOW_JUMP_INPUT = False
+        global SHOWING_JUMP_INPUT
+        SHOWING_JUMP_INPUT = False
 
         raw = self.jump_input.text
         new_index = int(raw)
@@ -336,10 +352,10 @@ class Annotator:
         return False  # reset the buffer
 
     def dismissInput(self):
-        global SHOW_JUMP_INPUT, SHOW_ED_INPUT
+        global SHOWING_JUMP_INPUT, SHOWING_ED_INPUT
 
-        SHOW_ED_INPUT = False
-        SHOW_JUMP_INPUT = False
+        SHOWING_ED_INPUT = False
+        SHOWING_JUMP_INPUT = False
 
     def removeLastED(self):
         self.store.removeLastED()
@@ -385,30 +401,34 @@ class Annotator:
         cur = self.store.curr()
         self.driver.get(cur.local_url)
 
-    def addCustomED(self):
-        global SHOW_ED_INPUT
-        SHOW_ED_INPUT = True
+    def display_ed_input(self, ed_input_state):
+        global SHOWING_ED_INPUT
+        SHOWING_ED_INPUT = True
+
+        self.ed_input_state = ed_input_state
 
         self.ed_input.text = ""
         get_app().layout.focus(self.ed_input)
 
     def accept_ed(self, buffer):
-        global SHOW_ED_INPUT
-        SHOW_ED_INPUT = False
-        global SET_CURRENT_ED
+        global SHOWING_ED_INPUT
+        SHOWING_ED_INPUT = False
 
         new = None
         stripped = self.ed_input.text.strip()
 
-        if SET_CURRENT_ED:
-            new = self.curr_ed = Ed.from_str(stripped)
-            SET_CURRENT_ED = False
-        else:
-            new = self.manual_eds.addSlot(stripped)
+        match self.ed_input_state:
+            case EDState.CURRENT_ED:
+                new = self.curr_ed = Ed.from_str(stripped)
+            case EDState.CUSTOM_ED:
+                new = self.manual_eds.addSlot(stripped)
+            case EDState.FILL_TO_ED:
+                self.fillToED(stripped)
 
         if new:
             self.store.addEDToCurrentImage(new)
 
+        self.ed_input_state = EDState.NONE
         return False  # reset the buffer
 
     def prevManualEDSlot(self):
@@ -428,6 +448,13 @@ class Annotator:
 
         self.driver.switch_to.new_window()
         self.driver.get(curr.url)
+
+    def fillToED(self, new_ed_string):
+        new_ed = Ed.from_str(new_ed_string)
+
+        if new_ed is not None:
+            while self.curr_ed < new_ed:
+                self.addNextED()
 
 
 class NumberValidator(Validator):
