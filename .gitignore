@@ -8,3 +8,5 @@
 *.sqlite
 
 *.db
+*.mov
+*.mp4

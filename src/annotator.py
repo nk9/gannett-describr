@@ -224,14 +224,19 @@ class Annotator:
             self.jumpToIndex()
 
         @kb.add("c-delete")
+        @kb.add("backspace")
         def _(event):
             self.removeLastED()
 
         @kb.add("up")
+        @kb.add("l")
+        @kb.add("L")
         def _(event):
             self.prevManualEDSlot()
 
         @kb.add("down")
+        @kb.add("k")
+        @kb.add("K")
         def _(event):
             self.nextManualEDSlot()
 
