@@ -37,6 +37,12 @@ class Image:
     def removeED(self, ed):
         self.eds.remove(str(ed).upper())
 
+    def lastED(self):
+        if len(self.eds) > 0:
+            return self.eds[len(self.eds) - 1]
+
+        return None
+
     @property
     def url(self):
         return FS_IMG_URL.format_map(
@@ -131,6 +137,7 @@ class Store:
             self.log.warning(f"Failed to insert '{ed}' for '{image}': {e}")
 
     def removeLastED(self):
+        removedED = None
         image = self.images[self.index]
         try:
             res = self.db.execute(
@@ -155,8 +162,12 @@ class Store:
                 )
                 image.removeED(name)
                 self.db.connection.commit()
+
+                removedED = name
         except Exception as e:
             self.log.warning(f"Failed to remove last ED for '{image}': {e}")
+
+        return removedED
 
     def largestEDForCurrentMetro(self):
         image = self.curr()
@@ -208,6 +219,7 @@ class Store:
                 id INTEGER PRIMARY KEY,
                 image_id INTEGER NOT NULL,
                 name VARCHAR,
+                created_at INTEGER DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (image_id) REFERENCES images (id),
                 UNIQUE(image_id, name));
             """

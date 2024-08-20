@@ -136,6 +136,17 @@ def test_largest_ed(test_db, oneImage):
     assert ed_name == "10"
 
 
+def test_image_last_ed(oneImage):
+    oneImage
+
+    assert oneImage.lastED() == None
+
+    oneImage.addED(Ed(1))
+    oneImage.addED(Ed(2))
+
+    assert oneImage.lastED() == "2"
+
+
 @pytest.fixture
 def manyUtps():
     return [
