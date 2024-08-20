@@ -3,8 +3,20 @@ class Ed:
         self.num = num
         self.suff = suff.upper()
 
-    def __repr__(self):
+    def __str__(self):
         return f"{self.num}{self.suff}"
+
+    def __repr__(self):
+        return f"Ed({self.num}{self.suff})"
+
+    def __add__(self, other: int):
+        return Ed(self.num + other, self.suff)
+
+    def __sub__(self, other: int):
+        if self.num - other >= 1:
+            return Ed(self.num - other, self.suff)
+
+        return None
 
     def __iadd__(self, other: int):
         self.num += other
@@ -49,6 +61,9 @@ class ManualEDList:
     def reset(self):
         self.index = None
         self.list = []
+
+    def slots(self):
+        return self.list
 
     def next(self):
         if len(self.list):

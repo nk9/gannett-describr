@@ -18,6 +18,19 @@ def test_increment():
     assert str(e) == "2B"
 
 
+def test_add_sub():
+    e = Ed(1)
+    e2 = e + 2
+
+    assert e2.num == 3
+
+    e3 = e2 - 2
+
+    assert e3.num == 1
+
+    assert e - 1 == None
+
+
 def test_from_str():
     e = Ed.from_str("7a")
     assert e.num == 7
@@ -83,3 +96,11 @@ def test_ed_list_prev():
     m.prev()
 
     assert m.curr() == Ed.from_str("456")
+
+
+def test_ed_list_slots():
+    m = ManualEDList()
+    m.addSlot("100")
+    m.addSlot("150")
+
+    assert m.slots() == [Ed(100), Ed(150)]
