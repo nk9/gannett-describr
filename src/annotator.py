@@ -228,16 +228,16 @@ class Annotator:
         def _(event):
             self.removeLastED()
 
-        @kb.add("up")
-        @kb.add("l")
-        @kb.add("L")
-        def _(event):
-            self.prevManualEDSlot()
-
         @kb.add("down")
         @kb.add("space")
         @kb.add("k")
         @kb.add("K")
+        def _(event):
+            self.prevManualEDSlot()
+
+        @kb.add("up")
+        @kb.add("l")
+        @kb.add("L")
         def _(event):
             self.nextManualEDSlot()
 
@@ -254,6 +254,7 @@ class Annotator:
             self.loadRemoteURL()
 
         @kb.add("/")
+        @kb.add("?")
         def _(event):
             self.undoAddED()
 

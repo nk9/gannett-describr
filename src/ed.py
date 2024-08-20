@@ -115,13 +115,14 @@ class ManualEDList:
         return self.list[self.index]
 
     def removeCurr(self):
-        del self.list[self.index]
+        if len(self.list) > 0:
+            del self.list[self.index]
 
-        if self.index >= len(self.list):
-            if len(self.list) == 0:
-                self.index = None
-            else:
-                self.index -= 1
+            if self.index >= len(self.list):
+                if len(self.list) == 0:
+                    self.index = None
+                else:
+                    self.index -= 1
 
     @property
     def currStr(self):
