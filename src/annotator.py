@@ -252,6 +252,10 @@ class Annotator:
         def _(event):
             self.loadRemoteURL()
 
+        @kb.add("/")
+        def _(event):
+            self.undoAddED()
+
         @kb.add("c-c")
         @kb.add("q")
         def _(event):
@@ -320,6 +324,30 @@ class Annotator:
 
     def addCurrED(self):
         self.store.addEDToCurrentImage(self.curr_ed)
+
+    def undoAddED(self):
+        if removedED := self.store.removeLastED():
+            ed = Ed.from_str(removedED)
+            is_first_ed = len(self.store.curr().eds) == 0
+            should_decrement = True
+
+            if is_first_ed:
+                # Check prev last ED
+                prev_img = self.store.images[self.store.index - 1]
+                prev_ed = prev_img.lastED()
+                should_decrement = prev_ed == ed - 1
+
+            if ed == self.curr_ed:
+                if should_decrement:
+                    self.curr_ed -= 1
+
+            else:  # Look through manual EDs
+                if should_decrement:
+                    for i, slot in enumerate(self.manual_eds.slots()):
+                        if slot == ed:
+                            self.manual_eds.index = i
+                            self.manual_eds.decrementCurr()
+                            break
 
     def increaseED(self):
         self.curr_ed += 1
