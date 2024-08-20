@@ -235,6 +235,7 @@ class Annotator:
             self.prevManualEDSlot()
 
         @kb.add("down")
+        @kb.add("space")
         @kb.add("k")
         @kb.add("K")
         def _(event):
@@ -335,7 +336,8 @@ class Annotator:
                 # Check prev last ED
                 prev_img = self.store.images[self.store.index - 1]
                 prev_ed = prev_img.lastED()
-                should_decrement = prev_ed == ed - 1
+                if prev_ed and Ed.from_str(prev_ed) == ed:
+                    should_decrement = False
 
             if ed == self.curr_ed:
                 if should_decrement:
