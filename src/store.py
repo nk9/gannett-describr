@@ -194,7 +194,11 @@ class Store:
 
     def skipToLastEnteredWithinMetro(self):
         for index, img in reversed(list(enumerate(self.images))):
-            if self.curr().utp_code == img.utp_code and len(img.eds):
+            if (
+                self.curr().utp_code == img.utp_code
+                and self.curr().year == img.year
+                and len(img.eds)
+            ):
                 self.index = index
                 break
 
