@@ -42,6 +42,7 @@ class EDState(Enum):
     CURRENT_ED = auto()
     CUSTOM_ED = auto()
     FILL_TO_ED = auto()
+    FILL_BY_COUNT = auto()
 
 
 load_dotenv()
@@ -174,6 +175,10 @@ class Annotator:
         @kb.add("f")
         def _(event):
             self.display_ed_input(EDState.FILL_TO_ED)
+
+        @kb.add("t")
+        def _(event):
+            self.display_ed_input(EDState.FILL_BY_COUNT)
 
         @kb.add("N")
         def _(event):
@@ -446,6 +451,13 @@ class Annotator:
         self.ed_input.text = ""
         get_app().layout.focus(self.ed_input)
 
+        def ed_input_text_changed(_):
+            if self.ed_input_state == EDState.FILL_BY_COUNT:
+                # Only accept a single character
+                self.ed_input.buffer.validate_and_handle()
+
+        self.ed_input.buffer.on_text_changed += ed_input_text_changed
+
     def accept_ed(self, buffer):
         global SHOWING_ED_INPUT
         SHOWING_ED_INPUT = False
@@ -462,6 +474,8 @@ class Annotator:
                 new = self.manual_eds.addSlot(stripped)
             case EDState.FILL_TO_ED:
                 self.fillToED(stripped)
+            case EDState.FILL_BY_COUNT:
+                self.fillByCount(stripped)
 
         if new:
             self.store.addEDToCurrentImage(new)
@@ -493,6 +507,16 @@ class Annotator:
         if new_ed is not None:
             while self.curr_ed < new_ed:
                 self.addNextED()
+
+    def fillByCount(self, count_string):
+        try:
+            count = int(count_string)
+            for i in range(count):
+                self.addNextED()
+
+        except:
+            # Do nothing
+            pass
 
 
 class NumberValidator(Validator):

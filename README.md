@@ -29,7 +29,8 @@ Place your right hand on the <kbd>n</kbd>, <kbd>m</kbd>, <kbd>&lt;</kbd>, and <k
 | <kbd>/</kbd>, <kbd>?</kbd>  | **Undo** last ED addition in the current image |
 | <kbd>-</kbd> | **Decrement ED** in primary slot |
 | <kbd>=</kbd> | **Increment ED** in primary slot |
-| <kbd>f</kbd> | **Fill** all EDs from current primary slot to entered number |
+| <kbd>f</kbd> | **Fill all EDs** from current primary slot to entered number |
+| <kbd>t</kbd> | **Fill count number** of EDs from current primary slot (mnemonic: counT) |
 
 You can add more slots to use, and interact with them by holding down <kbd>Shift</kbd>.
 
