@@ -193,6 +193,26 @@ class Annotator:
         def _(event):
             self.display_ed_input(EDState.FILL_BY_COUNT)
 
+        @kb.add("2")
+        def _(event):
+            self.fillByCount(2)
+
+        @kb.add("3")
+        def _(event):
+            self.fillByCount(3)
+
+        @kb.add("4")
+        def _(event):
+            self.fillByCount(4)
+
+        @kb.add("5")
+        def _(event):
+            self.fillByCount(5)
+
+        @kb.add("6")
+        def _(event):
+            self.fillByCount(6)
+
         @kb.add("N")
         def _(event):
             self.addNextCustomED()
