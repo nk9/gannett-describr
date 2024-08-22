@@ -1,12 +1,18 @@
+import random
+
 from prompt_toolkit.application import Application
 from prompt_toolkit.application.current import get_app
 from prompt_toolkit.filters import Condition
-from prompt_toolkit.key_binding import ConditionalKeyBindings, KeyBindings
+from prompt_toolkit.key_binding import (
+    ConditionalKeyBindings,
+    KeyBindings,
+    merge_key_bindings,
+)
 from prompt_toolkit.layout import ConditionalContainer, DynamicContainer
 from prompt_toolkit.layout.containers import HSplit, Window
 from prompt_toolkit.layout.controls import FormattedTextControl
 from prompt_toolkit.layout.layout import Layout
-from prompt_toolkit.widgets import SearchToolbar, TextArea
+from prompt_toolkit.widgets import CheckboxList
 
 show_input = False
 
@@ -16,6 +22,11 @@ def inputHidden():
     return not show_input
 
 
+@Condition
+def inputShown():
+    return show_input
+
+
 class Annotator:
     def __init__(self):
         self.counter = 1
@@ -23,9 +34,12 @@ class Annotator:
 
         bindings = self.setupBindings()
 
-        search_field = SearchToolbar()
-        self.input = TextArea(height=1, prompt="put it in> ", search_field=search_field)
-        self.input.accept_handler = self.acceptInput
+        self.remove_list = CheckboxList(
+            values=[
+                ("a", "a"),
+            ]
+        )
+        self.remove_list.multiple_selection = True
 
         application = Application(
             key_bindings=bindings, full_screen=False, layout=self.layout()
@@ -39,11 +53,11 @@ class Annotator:
             return HSplit(
                 [
                     Window(FormattedTextControl(self.status()), height=1),
-                    ConditionalContainer(content=self.input, filter=show_input),
+                    ConditionalContainer(content=self.remove_list, filter=show_input),
                 ]
             )
 
-        return Layout(DynamicContainer(makeLayout), focused_element=self.input)
+        return Layout(DynamicContainer(makeLayout), focused_element=self.remove_list)
 
     def setupBindings(self):
         kb = KeyBindings()
@@ -52,7 +66,7 @@ class Annotator:
         def _(event):
             self.addOne()
 
-        @kb.add("/")
+        @kb.add("r")
         def _(event):
             self.showInput()
 
@@ -61,7 +75,19 @@ class Annotator:
         def _(event):
             get_app().exit(result=True)
 
-        return ConditionalKeyBindings(kb, inputHidden)
+        input_kb = KeyBindings()
+
+        @input_kb.add("enter")
+        @input_kb.add("q")
+        def _(event):
+            self.dismissInput()
+
+        return merge_key_bindings(
+            [
+                ConditionalKeyBindings(kb, inputHidden),
+                ConditionalKeyBindings(input_kb, inputShown),
+            ]
+        )
 
     def addOne(self):
         self.counter += 1
@@ -73,17 +99,19 @@ class Annotator:
         global show_input
         show_input = True
 
-        # Clear field of any stray characters since last Enter
-        self.input.text = ""
+        items = random.sample(range(1000), 4)
+        self.remove_list.values = [(i, f"{i}") for i in items]
+        self.remove_list.current_values = []
+        self.remove_list._selected_index = 0
 
-    def acceptInput(self, buffer):
-        self.string = self.input.text
-
-        with open("/tmp/entry_mre.log", "a") as log:
-            print(f"acceptInput: {self.string}", file=log)
-
+    def dismissInput(self):
         global show_input
         show_input = False
+
+        get_app().invalidate()
+
+        with open("/tmp/remove.txt", "w") as f:
+            print("Items to be removed:", self.remove_list.current_values, file=f)
 
 
 if __name__ == "__main__":
