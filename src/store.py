@@ -138,7 +138,8 @@ class Store:
 
     def removeLastED(self):
         removedED = None
-        image = self.images[self.index]
+        image = self.curr()
+
         try:
             res = self.db.execute(
                 """
@@ -168,6 +169,37 @@ class Store:
             self.log.warning(f"Failed to remove last ED for '{image}': {e}")
 
         return removedED
+
+    def removeED(self, ed_name):
+        image = self.curr()
+
+        try:
+            res = self.db.execute(
+                """
+                SELECT id, name
+                FROM eds
+                WHERE image_id = ?
+                ORDER BY id DESC;
+                """,
+                (image.db_id,),
+            ).fetchall()
+
+            # Make sure there's an ED to remove!
+            if res is not None:
+                for ed_id, name in res:
+                    if name == ed_name:
+                        self.db.execute(
+                            """
+                            DELETE FROM eds WHERE id = ?
+                            """,
+                            (ed_id,),
+                        )
+
+                        image.removeED(name)
+                        self.db.connection.commit()
+                        break
+        except Exception as e:
+            self.log.warning(f"Failed to remove ED '{ed_name}' for '{image}': {e}")
 
     def largestEDForCurrentMetro(self):
         image = self.curr()

@@ -20,7 +20,8 @@ from prompt_toolkit.layout.containers import HSplit, Window
 from prompt_toolkit.layout.controls import FormattedTextControl
 from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.validation import ValidationError, Validator
-from prompt_toolkit.widgets import SearchToolbar, TextArea
+from prompt_toolkit.widgets import SearchToolbar, TextArea, CheckboxList
+from prompt_toolkit.shortcuts import checkboxlist_dialog
 from selenium.webdriver.chrome.options import Options
 from typing_extensions import Annotated
 
@@ -35,6 +36,7 @@ from src.utils import buildImageList
 
 SHOWING_ED_INPUT = False
 SHOWING_JUMP_INPUT = False
+SHOWING_REMOVE_LIST = False
 
 
 class EDState(Enum):
@@ -64,12 +66,17 @@ def annotate_ed_desc_images(
 
 @Condition
 def notShowingInput():
-    return not (SHOWING_ED_INPUT or SHOWING_JUMP_INPUT)
+    return not (SHOWING_ED_INPUT or SHOWING_JUMP_INPUT or SHOWING_REMOVE_LIST)
 
 
 @Condition
 def showingInput():
     return SHOWING_ED_INPUT or SHOWING_JUMP_INPUT
+
+
+@Condition
+def showingRemoveList():
+    return SHOWING_REMOVE_LIST
 
 
 class DummyDriver:
@@ -129,6 +136,9 @@ class Annotator:
         )
         self.jump_input.accept_handler = self.accept_jump
 
+        self.remove_list = CheckboxList(values=[("a", "a"), ("b", "b"), ("c", "c")])
+        self.remove_list.multiple_selection = True
+
         def makeLayout():
             return HSplit(
                 [
@@ -139,6 +149,9 @@ class Annotator:
                     ),
                     ConditionalContainer(
                         content=self.jump_input, filter=SHOWING_JUMP_INPUT
+                    ),
+                    ConditionalContainer(
+                        content=self.remove_list, filter=SHOWING_REMOVE_LIST
                     ),
                 ]
             )
@@ -233,6 +246,10 @@ class Annotator:
         def _(event):
             self.removeLastED()
 
+        @kb.add("r")
+        def _(event):
+            self.display_remove_list()
+
         @kb.add("down")
         @kb.add("space")
         @kb.add("k")
@@ -275,10 +292,18 @@ class Annotator:
         def _(event):
             self.dismissInput()
 
+        removeListKB = KeyBindings()
+
+        @removeListKB.add("q")
+        @removeListKB.add("enter")
+        def _(event):
+            self.dismiss_remove_list()
+
         return merge_key_bindings(
             [
                 ConditionalKeyBindings(kb, notShowingInput),
                 ConditionalKeyBindings(inputKB, showingInput),
+                ConditionalKeyBindings(removeListKB, showingRemoveList),
             ]
         )
 
@@ -400,6 +425,34 @@ class Annotator:
 
     def removeLastED(self):
         self.store.removeLastED()
+
+    def display_remove_list(self):
+        # curr = self.store.curr()
+        # results = checkboxlist_dialog(
+        #     title="Remove ED(s):", values=[(ed, ed) for ed in curr.eds]
+        # ).run()
+        # if results:
+        #     print(f"Remove these:", results)
+        # pass
+        global SHOWING_REMOVE_LIST
+
+        get_app().layout.focus(self.remove_list)
+
+        curr = self.store.curr()
+        self.remove_list.values = [(ed, ed) for ed in curr.eds]
+        self.remove_list.current_values = []
+        self.remove_list._selected_index = 0
+
+        SHOWING_REMOVE_LIST = True
+
+    def dismiss_remove_list(self):
+        global SHOWING_REMOVE_LIST
+
+        SHOWING_REMOVE_LIST = False
+        get_app().invalidate()
+
+        for val in self.remove_list.current_values:
+            self.store.removeED(val)
 
     def nextImage(self):
         old = self.store.curr()
