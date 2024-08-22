@@ -86,7 +86,8 @@ class ManualEDList:
 
         if new is not None:
             self.list.append(new)
-            self.index = len(self.list) - 1
+            self.list.sort()
+            self.index = self.list.index(new)
 
         return new
 
