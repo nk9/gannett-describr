@@ -2,7 +2,6 @@ import sqlite3
 from enum import Enum, auto
 from pathlib import Path
 
-import readchar
 import typer
 from dotenv import load_dotenv
 from prompt_toolkit import prompt
@@ -77,7 +76,6 @@ def annotate_ed_desc_images(
 ):
     annotator = Annotator(debug, driver(headless))
     annotator.process()
-    # annotator.write(Path("../gannett-data/fs_eds.parquet"))
 
 
 @Condition
