@@ -27,7 +27,7 @@ from typing_extensions import Annotated
 from src.driver import driver
 from src.ed import Ed, ManualEDList
 from src.store import Image, Store, prev
-from src.utils import buildImageList
+from src.utils import buildImageList, DB_FILE_NAME
 
 # Turn on to get verbose Selenium logs
 # import logging
@@ -107,7 +107,7 @@ class Annotator:
         self.debug = debug
         self.ed_input_state = EDState.NONE
 
-        connection = sqlite3.connect("annotated.db")
+        connection = sqlite3.connect(DB_FILE_NAME)
         cursor = connection.cursor()
         self.store = Store(cursor, buildImageList())
         self.store.populate_db()

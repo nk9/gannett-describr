@@ -17,6 +17,8 @@ prompt-toolkit = "^3.0.47"
 stableset = "^5.2.1"
 requests-cache = "^1.2.1"
 requests-ratelimiter = "^0.7.0"
+pyarrow = "^17.0.0"
+pandas = "^2.2.2"
 
 
 [tool.pytest.ini_options]

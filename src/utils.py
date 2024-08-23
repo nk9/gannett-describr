@@ -4,6 +4,8 @@ import re
 from pathlib import Path
 from src.store import Image
 
+DB_FILE_NAME = "annotated.db"
+
 
 def buildImageList():
     images = []
