@@ -47,6 +47,22 @@ class EDState(Enum):
     FILL_BY_COUNT = auto()
 
 
+class NumberValidator(Validator):
+    def validate(self, document):
+        text = document.text
+
+        if text and not text.isdigit():
+            i = 0
+
+            # Get index of first non numeric character.
+            # We want to move the cursor here.
+            for i, c in enumerate(text):
+                if not c.isdigit():
+                    break
+
+            raise ValidationError(message="Array index only", cursor_position=i)
+
+
 load_dotenv()
 
 app = typer.Typer()
@@ -157,187 +173,6 @@ class Annotator:
             )
 
         return Layout(DynamicContainer(makeLayout))
-
-    def setupBindings(self):
-        kb = KeyBindings()
-
-        @kb.add("s")
-        def _(event):
-            self.skipToLastEnteredWithinMetro()
-
-        @kb.add("S")
-        def _(event):
-            self.skipToLastEntered()
-
-        @kb.add("n")
-        def _(event):
-            self.addNextED()
-
-        @kb.add("m")
-        def _(event):
-            self.addCurrED()
-
-        @kb.add("e")
-        def _(event):
-            self.display_ed_input(EDState.CURRENT_ED)
-
-        @kb.add("E")
-        def _(event):
-            self.display_ed_input(EDState.CUSTOM_ED)
-
-        @kb.add("f")
-        def _(event):
-            self.display_ed_input(EDState.FILL_TO_ED)
-
-        @kb.add("t")
-        def _(event):
-            self.display_ed_input(EDState.FILL_BY_COUNT)
-
-        @kb.add("2")
-        def _(event):
-            self.fillByCount(2)
-
-        @kb.add("3")
-        def _(event):
-            self.fillByCount(3)
-
-        @kb.add("4")
-        def _(event):
-            self.fillByCount(4)
-
-        @kb.add("5")
-        def _(event):
-            self.fillByCount(5)
-
-        @kb.add("6")
-        def _(event):
-            self.fillByCount(6)
-
-        @kb.add("7")
-        def _(event):
-            self.fillByCount(7)
-
-        @kb.add("8")
-        def _(event):
-            self.fillByCount(8)
-
-        @kb.add("9")
-        def _(event):
-            self.fillByCount(9)
-
-        @kb.add("N")
-        def _(event):
-            self.addNextCustomED()
-
-        @kb.add("]")
-        @kb.add(">")
-        @kb.add(".")
-        def _(event):
-            self.nextImage()
-
-        @kb.add("[")
-        @kb.add("<")
-        @kb.add(",")
-        def _(event):
-            self.prevImage()
-
-        @kb.add("}")
-        def _(event):
-            self.nextMetro()
-
-        @kb.add("{")
-        def _(event):
-            self.prevMetro()
-
-        @kb.add("=")
-        def _(event):
-            self.increaseED()
-
-        @kb.add("-")
-        def _(event):
-            self.decreaseED()
-
-        @kb.add("+")
-        def _(event):
-            self.increaseManualED()
-
-        @kb.add("_")
-        def _(event):
-            self.decreaseManualED()
-
-        @kb.add("`")
-        def _(event):
-            self.syncImageWithDriver()
-
-        @kb.add("j")
-        def _(event):
-            self.jumpToIndex()
-
-        @kb.add("c-delete")
-        @kb.add("backspace")
-        def _(event):
-            self.removeLastED()
-
-        @kb.add("r")
-        def _(event):
-            self.display_remove_list()
-
-        @kb.add("down")
-        @kb.add("space")
-        @kb.add("k")
-        @kb.add("K")
-        def _(event):
-            self.prevManualEDSlot()
-
-        @kb.add("up")
-        @kb.add("l")
-        @kb.add("L")
-        def _(event):
-            self.nextManualEDSlot()
-
-        @kb.add("c-m")
-        def _(event):
-            self.removeCurrManualEDSlot()
-
-        @kb.add("M")
-        def _(event):
-            self.addCurrManualED()
-
-        @kb.add("u")
-        def _(event):
-            self.loadRemoteURL()
-
-        @kb.add("/")
-        @kb.add("?")
-        def _(event):
-            self.undoAddED()
-
-        @kb.add("c-c")
-        @kb.add("q")
-        def _(event):
-            self.driver.quit()
-            event.app.exit(result=True)
-
-        inputKB = KeyBindings()
-
-        @inputKB.add("escape")
-        def _(event):
-            self.dismissInput()
-
-        removeListKB = KeyBindings()
-
-        @removeListKB.add("q")
-        @removeListKB.add("enter")
-        def _(event):
-            self.dismiss_remove_list()
-
-        return merge_key_bindings(
-            [
-                ConditionalKeyBindings(kb, notShowingInput),
-                ConditionalKeyBindings(inputKB, showingInput),
-                ConditionalKeyBindings(removeListKB, showingRemoveList),
-            ]
-        )
 
     def top_toolbar(self):
         now = self.store.curr()
@@ -603,21 +438,186 @@ class Annotator:
             # Do nothing
             pass
 
+    def setupBindings(self):
+        kb = KeyBindings()
 
-class NumberValidator(Validator):
-    def validate(self, document):
-        text = document.text
+        @kb.add("s")
+        def _(event):
+            self.skipToLastEnteredWithinMetro()
 
-        if text and not text.isdigit():
-            i = 0
+        @kb.add("S")
+        def _(event):
+            self.skipToLastEntered()
 
-            # Get index of first non numeric character.
-            # We want to move the cursor here.
-            for i, c in enumerate(text):
-                if not c.isdigit():
-                    break
+        @kb.add("n")
+        def _(event):
+            self.addNextED()
 
-            raise ValidationError(message="Array index only", cursor_position=i)
+        @kb.add("m")
+        def _(event):
+            self.addCurrED()
+
+        @kb.add("e")
+        def _(event):
+            self.display_ed_input(EDState.CURRENT_ED)
+
+        @kb.add("E")
+        def _(event):
+            self.display_ed_input(EDState.CUSTOM_ED)
+
+        @kb.add("f")
+        def _(event):
+            self.display_ed_input(EDState.FILL_TO_ED)
+
+        @kb.add("t")
+        def _(event):
+            self.display_ed_input(EDState.FILL_BY_COUNT)
+
+        @kb.add("2")
+        def _(event):
+            self.fillByCount(2)
+
+        @kb.add("3")
+        def _(event):
+            self.fillByCount(3)
+
+        @kb.add("4")
+        def _(event):
+            self.fillByCount(4)
+
+        @kb.add("5")
+        def _(event):
+            self.fillByCount(5)
+
+        @kb.add("6")
+        def _(event):
+            self.fillByCount(6)
+
+        @kb.add("7")
+        def _(event):
+            self.fillByCount(7)
+
+        @kb.add("8")
+        def _(event):
+            self.fillByCount(8)
+
+        @kb.add("9")
+        def _(event):
+            self.fillByCount(9)
+
+        @kb.add("N")
+        def _(event):
+            self.addNextCustomED()
+
+        @kb.add("]")
+        @kb.add(">")
+        @kb.add(".")
+        def _(event):
+            self.nextImage()
+
+        @kb.add("[")
+        @kb.add("<")
+        @kb.add(",")
+        def _(event):
+            self.prevImage()
+
+        @kb.add("}")
+        def _(event):
+            self.nextMetro()
+
+        @kb.add("{")
+        def _(event):
+            self.prevMetro()
+
+        @kb.add("=")
+        def _(event):
+            self.increaseED()
+
+        @kb.add("-")
+        def _(event):
+            self.decreaseED()
+
+        @kb.add("+")
+        def _(event):
+            self.increaseManualED()
+
+        @kb.add("_")
+        def _(event):
+            self.decreaseManualED()
+
+        @kb.add("`")
+        def _(event):
+            self.syncImageWithDriver()
+
+        @kb.add("j")
+        def _(event):
+            self.jumpToIndex()
+
+        @kb.add("c-delete")
+        @kb.add("backspace")
+        def _(event):
+            self.removeLastED()
+
+        @kb.add("r")
+        def _(event):
+            self.display_remove_list()
+
+        @kb.add("down")
+        @kb.add("space")
+        @kb.add("k")
+        @kb.add("K")
+        def _(event):
+            self.prevManualEDSlot()
+
+        @kb.add("up")
+        @kb.add("l")
+        @kb.add("L")
+        def _(event):
+            self.nextManualEDSlot()
+
+        @kb.add("c-m")
+        def _(event):
+            self.removeCurrManualEDSlot()
+
+        @kb.add("M")
+        def _(event):
+            self.addCurrManualED()
+
+        @kb.add("u")
+        def _(event):
+            self.loadRemoteURL()
+
+        @kb.add("/")
+        @kb.add("?")
+        def _(event):
+            self.undoAddED()
+
+        @kb.add("c-c")
+        @kb.add("q")
+        def _(event):
+            self.driver.quit()
+            event.app.exit(result=True)
+
+        inputKB = KeyBindings()
+
+        @inputKB.add("escape")
+        def _(event):
+            self.dismissInput()
+
+        removeListKB = KeyBindings()
+
+        @removeListKB.add("q")
+        @removeListKB.add("enter")
+        def _(event):
+            self.dismiss_remove_list()
+
+        return merge_key_bindings(
+            [
+                ConditionalKeyBindings(kb, notShowingInput),
+                ConditionalKeyBindings(inputKB, showingInput),
+                ConditionalKeyBindings(removeListKB, showingRemoveList),
+            ]
+        )
 
 
 if __name__ == "__main__":
