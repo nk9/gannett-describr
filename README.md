@@ -23,14 +23,16 @@ Place your right hand on the <kbd>n</kbd>, <kbd>m</kbd>, <kbd>&lt;</kbd>, and <k
 | ---- | ------------- |
 | <kbd>e</kbd>  | **Enter new ED** in primary slot and **add that ED** to image |
 | <kbd>n</kbd>  | **Increment and add ED** from primary slot (mnemonic: Next) |
-| <kbd>m</kbd>  | **Add current ED** from primary slot with no increment  |
-| <kbd>,</kbd>, <kbd>&lt;</kbd>  | Switch to **previous image** (mnemonic: left angle bracket)|
-| <kbd>.</kbd>, <kbd>&gt;</kbd>  | Switch to **next image** (mnemonic: right angle bracket) |
-| <kbd>/</kbd>, <kbd>?</kbd>  | **Undo** last ED addition in the current image |
+| <kbd>m</kbd>  | **Add current ED** from primary slot with no increment |
+| <kbd>2</kbd>&ndash;<kbd>9</kbd>  | **Increment and add (count) number of EDs** from primary slot |
+| <kbd>,</kbd>,&nbsp;<kbd>&lt;</kbd>  | Switch to **previous image** (mnemonic: left angle bracket)|
+| <kbd>.</kbd>,&nbsp;<kbd>&gt;</kbd>  | Switch to **next image** (mnemonic: right angle bracket) |
+| <kbd>/</kbd>,&nbsp;<kbd>?</kbd>  | **Undo** last ED addition in the current image |
 | <kbd>-</kbd> | **Decrement ED** in primary slot |
-| <kbd>=</kbd> | **Increment ED** in primary slot |
+| <kbd>=</kbd> | **Increment ED** in primary slot (mnemonic: <kbd>+</kbd> uses the same key)  |
 | <kbd>f</kbd> | **Fill all EDs** from current primary slot to entered number |
 | <kbd>t</kbd> | **Fill count number** of EDs from current primary slot (mnemonic: counT) |
+| <kbd>r</kbd> | **Remove ED(s)** from image |
 
 You can add more slots to use, and interact with them by holding down <kbd>Shift</kbd>.
 
@@ -40,7 +42,9 @@ You can add more slots to use, and interact with them by holding down <kbd>Shift
 | <kbd>N</kbd>  | **Increment and add ED** from current manual slot (mnemonic: Next) |
 | <kbd>M</kbd>  | **Add current ED** from primary slot with no increment  |
 | <kbd>space</kbd> | **Cycle through manual slots** |
-| <kbd>_</kbd> | **Decrement ED** in current manual slot |
+| <kbd>l</kbd>,&nbsp;<kbd>L</kbd>  | **Increase** manual slot |
+| <kbd>k</kbd>,&nbsp;<kbd>K</kbd>  | **Decrease** manual slot |
+| <kbd>_</kbd> | **Decrement ED** in current manual slot (mnemonic: <kbd>Shift</kbd>-<kbd>-</kbd>) |
 | <kbd>+</kbd> | **Increment ED** in current manual slot |
 | <kbd>Ctrl</kbd>-<kbd>m</kbd> | **Remove current manual slot** |
 
