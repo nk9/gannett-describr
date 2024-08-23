@@ -213,6 +213,18 @@ class Annotator:
         def _(event):
             self.fillByCount(6)
 
+        @kb.add("7")
+        def _(event):
+            self.fillByCount(7)
+
+        @kb.add("8")
+        def _(event):
+            self.fillByCount(8)
+
+        @kb.add("9")
+        def _(event):
+            self.fillByCount(9)
+
         @kb.add("N")
         def _(event):
             self.addNextCustomED()
