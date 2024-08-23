@@ -22,13 +22,20 @@ def export(
 class Exporter:
     def __init__(self, debug):
         self.prepare_db_connection()
-        descrs = self.fetch_ed_descrs()
-
-        print(descrs)
+        self.descrs = self.fetch_ed_descrs()
 
     def write(self, path):
-        print("writing…")
-        pass
+        schema = pa.schema(
+            [
+                ("year", pa.int16()),
+                ("utp_code", pa.string()),
+                ("ed", pa.string()),
+                ("image_index", pa.int32()),
+                ("ark", pa.string()),
+            ]
+        )
+        self.descrs.to_parquet(path, schema=schema, index=False)
+        print(f"Written to {path}")
 
     def prepare_db_connection(self):
         self.connection = sqlite3.connect(f"file:{DB_FILE_NAME}?mode=ro", uri=True)
