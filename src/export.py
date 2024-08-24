@@ -29,9 +29,13 @@ class Exporter:
             [
                 ("year", pa.int16()),
                 ("utp_code", pa.string()),
+                ("metro_name", pa.string()),
+                ("county", pa.string()),
+                ("state", pa.string()),
                 ("ed", pa.string()),
                 ("image_index", pa.int32()),
                 ("ark", pa.string()),
+                ("description", pa.string()),
             ]
         )
         self.descrs.to_parquet(path, schema=schema, index=False)
@@ -40,6 +44,9 @@ class Exporter:
     def prepare_db_connection(self):
         self.connection = sqlite3.connect(f"file:{DB_FILE_NAME}?mode=ro", uri=True)
         self.db = self.connection.cursor()
+
+    def load_mapping(self):
+        return pd.read_csv(Path("../gannett-data/city-county-mapping.csv"))
 
     def fetch_ed_descrs(self):
         res = self.db.execute(
@@ -52,8 +59,13 @@ class Exporter:
         ).fetchall()
 
         df = pd.DataFrame(res, columns=("year", "utp_code", "ed", "image_index", "ark"))
+        mappingDF = self.load_mapping()
 
-        return df
+        mergedDF = pd.merge(df, mappingDF, on=["year", "utp_code"])
+        mergedDF = mergedDF.rename(columns={"city": "metro_name"})
+        mergedDF["description"] = ""
+
+        return mergedDF
 
 
 if __name__ == "__main__":
