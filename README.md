@@ -27,6 +27,8 @@ Place your right hand on the <kbd>n</kbd>, <kbd>m</kbd>, <kbd>&lt;</kbd>, and <k
 | <kbd>2</kbd>&ndash;<kbd>9</kbd>  | **Increment and add (count) number of EDs** from primary slot |
 | <kbd>,</kbd>,&nbsp;<kbd>&lt;</kbd>  | Switch to **previous image** (mnemonic: left angle bracket)|
 | <kbd>.</kbd>,&nbsp;<kbd>&gt;</kbd>  | Switch to **next image** (mnemonic: right angle bracket) |
+| <kbd>{</kbd>  | Jump to **previous metro** (mnemonic: left curly brace)|
+| <kbd>}</kbd>  | Jump to **next metro** (mnemonic: right curly brace) |
 | <kbd>/</kbd>,&nbsp;<kbd>?</kbd>  | **Undo** last ED addition in the current image |
 | <kbd>-</kbd> | **Decrement ED** in primary slot |
 | <kbd>=</kbd> | **Increment ED** in primary slot (mnemonic: <kbd>+</kbd> uses the same key)  |
