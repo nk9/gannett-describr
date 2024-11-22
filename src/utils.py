@@ -29,19 +29,24 @@ def buildImageList():
                 start = int(row["start_index"])
                 stop = int(row["stop_index"])
                 metro_index = 0
-                for index, ark in enumerate(film_info[row["digital_film_no"]]):
-                    if index >= start and index <= stop:
-                        images.append(
-                            Image(
-                                row["year"],
-                                row["utp_code"],
-                                ark,
-                                index,
-                                metro_index,
-                                stop - start,
-                                row["collection"],
+                if info := film_info.get(row["digital_film_no"]):
+                    for index, ark in enumerate(info):
+                        if index >= start and index <= stop:
+                            images.append(
+                                Image(
+                                    row["year"],
+                                    row["utp_code"],
+                                    ark,
+                                    index,
+                                    metro_index,
+                                    stop - start,
+                                    row["collection"],
+                                )
                             )
-                        )
-                        metro_index += 1
+                            metro_index += 1
+                else:
+                    print(
+                        f"ERROR: No film info json found for {row['digital_film_no']}"
+                    )
 
     return images
