@@ -1,16 +1,28 @@
 import undetected_chromedriver as uc
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver import Chrome
 
 
-def driver(use_dummy):
+def driver(use_dummy=False, use_offline=False):
     driver = DummyDriver()
+    custom_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.59 Safari/537.36"
 
-    if not use_dummy:
+    if use_offline:
+        options = Options()
+        options.add_argument("--user-data-dir=selenium")
+        options.add_argument("--disk-cache-size=1024300000")
+
+        options.add_argument(f"--user-agent={custom_agent}")
+
+        driver = Chrome(options=options)
+    elif not use_dummy:
         options = uc.ChromeOptions()
         options.add_argument("--user-data-dir=selenium")
         options.add_argument("--disk-cache-size=1024300000")
         options.add_argument("--window-size=1504,1573")  # broken?
         options.add_argument("--window-position=1504,25")  # broken?
+
+        options.add_argument(f"--user-agent={custom_agent}")
 
         driver = uc.Chrome(options=options, enable_cdp_events=True)
 

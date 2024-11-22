@@ -73,8 +73,9 @@ def annotate_ed_desc_images(
     headless: Annotated[
         bool, typer.Option("--headless", "-h", "--dummy", "-d")
     ] = False,
+    offline: Annotated[bool, typer.Option("--offline", "-o")] = False,
 ):
-    annotator = Annotator(debug, driver(headless))
+    annotator = Annotator(debug, driver(use_dummy=headless, use_offline=offline))
     annotator.process()
 
 
