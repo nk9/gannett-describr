@@ -34,7 +34,7 @@ Place your right hand on the <kbd>n</kbd>, <kbd>m</kbd>, <kbd>&lt;</kbd>, and <k
 | <kbd>=</kbd> | **Increment ED** in primary slot (mnemonic: <kbd>+</kbd> uses the same key)  |
 | <kbd>f</kbd> | **Fill all EDs** from current primary slot to entered number |
 | <kbd>t</kbd> | **Fill count number** of EDs from current primary slot (mnemonic: counT) |
-| <kbd>r</kbd> | **Remove ED(s)** from image |
+| <kbd>r</kbd> | **Remove ED(s)** from image (use <kbd>q</kbd> to dismiss) |
 
 You can add more slots to use, and interact with them by holding down <kbd>Shift</kbd>.
 

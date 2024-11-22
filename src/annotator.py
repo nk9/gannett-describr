@@ -294,23 +294,17 @@ class Annotator:
         self.store.removeLastED()
 
     def display_remove_list(self):
-        # curr = self.store.curr()
-        # results = checkboxlist_dialog(
-        #     title="Remove ED(s):", values=[(ed, ed) for ed in curr.eds]
-        # ).run()
-        # if results:
-        #     print(f"Remove these:", results)
-        # pass
-        global SHOWING_REMOVE_LIST
-
-        get_app().layout.focus(self.remove_list)
-
         curr = self.store.curr()
-        self.remove_list.values = [(ed, ed) for ed in curr.eds]
-        self.remove_list.current_values = []
-        self.remove_list._selected_index = 0
 
-        SHOWING_REMOVE_LIST = True
+        if len(curr.eds):
+            global SHOWING_REMOVE_LIST
+            get_app().layout.focus(self.remove_list)
+
+            self.remove_list.values = [(ed, ed) for ed in curr.eds]
+            self.remove_list.current_values = []
+            self.remove_list._selected_index = 0
+
+            SHOWING_REMOVE_LIST = True
 
     def dismiss_remove_list(self):
         global SHOWING_REMOVE_LIST
