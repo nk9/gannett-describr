@@ -175,7 +175,8 @@ class Annotator:
 
     def top_toolbar(self):
         now = self.store.curr()
-        return f"{str(now)}"
+        empty = self.store.currMetroEmptyCount()
+        return f"{str(now)} [{empty} empty]"
 
     def bottom_toolbar(self):
         now = self.store.curr()

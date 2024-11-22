@@ -121,6 +121,27 @@ class Store:
 
         return self.images[index]
 
+    def currMetroEmptyCount(self):
+        image = self.curr()
+
+        try:
+            res = self.db.execute(
+                """
+                SELECT COUNT(id)
+                FROM overview
+                WHERE utp_code = ? AND year = ? AND name is NULL;
+                """,
+                (image.utp_code, image.year),
+            ).fetchone()
+
+            if res is not None:
+                return res[0]
+
+        except Exception as e:
+            self.log.warning(
+                f"Failed to count empty EDs for metro containing '{image}': {e}"
+            )
+
     def addEDToCurrentImage(self, ed: Ed):
         image = self.curr()
         try:
