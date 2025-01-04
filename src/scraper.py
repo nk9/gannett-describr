@@ -41,7 +41,7 @@ def scrape_ed_desc_images(
     debug: Annotated[bool, typer.Option("--debug", "-v")] = False,
     headless: Annotated[bool, typer.Option("--headless", "-h")] = False,
 ):
-    scraper = Scraper(debug, driver(headless))
+    scraper = Scraper(debug, driver(use_dummy=headless, use_offline=True))
     scraper.scrape_ed_desc_images()
     # scraper.write(Path("../gannett-data/fs_eds.parquet"))
 
