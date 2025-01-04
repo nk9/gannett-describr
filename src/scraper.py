@@ -131,7 +131,7 @@ class Scraper:
 
     def image_path(self, img):
         short_ark = img.ark[4:]
-        return self.out_path / str(img.year) / img.utp_code / f"{short_ark}.png"
+        return self.out_path / str(img.year) / img.utp_code / f"{short_ark}.jpg"
 
     def load_next(self, old, new):
         if old.utp_code == new.utp_code and new.image_index == old.image_index + 1:

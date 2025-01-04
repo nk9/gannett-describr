@@ -52,7 +52,7 @@ class Image:
     @property
     def local_url(self):
         short_ark = self.ark[4:]
-        path = Path("../ed-desc-img") / self.year / self.utp_code / f"{short_ark}.png"
+        path = Path("../ed-desc-img") / self.year / self.utp_code / f"{short_ark}.jpg"
         return path.resolve().as_uri()
 
 
