@@ -35,6 +35,7 @@ from src.utils import buildImageList, DB_FILE_NAME
 
 SHOWING_ED_INPUT = False
 SHOWING_JUMP_INPUT = False
+SHOWING_JUMP_METRO_INPUT = False
 SHOWING_REMOVE_LIST = False
 
 
@@ -81,12 +82,22 @@ def annotate_ed_desc_images(
 
 @Condition
 def notShowingInput():
-    return not (SHOWING_ED_INPUT or SHOWING_JUMP_INPUT or SHOWING_REMOVE_LIST)
+    return not (
+        SHOWING_ED_INPUT
+        or SHOWING_JUMP_INPUT
+        or SHOWING_JUMP_METRO_INPUT
+        or SHOWING_REMOVE_LIST
+    )
 
 
 @Condition
 def showingInput():
-    return SHOWING_ED_INPUT or SHOWING_JUMP_INPUT
+    return SHOWING_ED_INPUT or SHOWING_JUMP_INPUT or SHOWING_JUMP_METRO_INPUT
+
+
+@Condition
+def showingJumpInput():
+    return SHOWING_JUMP_INPUT or SHOWING_JUMP_METRO_INPUT
 
 
 @Condition
@@ -149,7 +160,16 @@ class Annotator:
             search_field=jump_search_field,
             validator=num_validator,
         )
-        self.jump_input.accept_handler = self.accept_jump
+        self.jump_input.accept_handler = self.accept_jump_index
+
+        jump_metro_search_field = SearchToolbar()
+        self.jump_metro_input = TextArea(
+            height=1,
+            prompt="Jump to metro> ",
+            multiline=False,
+            search_field=jump_metro_search_field,
+        )
+        self.jump_metro_input.accept_handler = self.accept_jump_metro
 
         self.remove_list = CheckboxList(values=[("a", "a"), ("b", "b"), ("c", "c")])
         self.remove_list.multiple_selection = True
@@ -163,7 +183,12 @@ class Annotator:
                         content=self.ed_input, filter=SHOWING_ED_INPUT
                     ),
                     ConditionalContainer(
-                        content=self.jump_input, filter=SHOWING_JUMP_INPUT
+                        content=self.jump_input,
+                        filter=SHOWING_JUMP_INPUT,
+                    ),
+                    ConditionalContainer(
+                        content=self.jump_metro_input,
+                        filter=SHOWING_JUMP_METRO_INPUT,
                     ),
                     ConditionalContainer(
                         content=self.remove_list, filter=SHOWING_REMOVE_LIST
@@ -270,7 +295,7 @@ class Annotator:
         buf = self.jump_input.buffer
         buf.cursor_position = len(self.jump_input.text)
 
-    def accept_jump(self, buffer):
+    def accept_jump_index(self, buffer):
         global SHOWING_JUMP_INPUT
         SHOWING_JUMP_INPUT = False
 
@@ -284,11 +309,32 @@ class Annotator:
 
         return False  # reset the buffer
 
+    def jumpToMetro(self):
+        global SHOWING_JUMP_METRO_INPUT
+        SHOWING_JUMP_METRO_INPUT = True
+
+        self.jump_metro_input.text = ""
+        get_app().layout.focus(self.jump_metro_input)
+        buf = self.jump_metro_input.buffer
+        buf.cursor_position = 0
+
+    def accept_jump_metro(self, buffer):
+        global SHOWING_JUMP_METRO_INPUT
+        SHOWING_JUMP_METRO_INPUT = False
+
+        # breakpoint()
+        if self.store.jumpToMetro(self.jump_metro_input.text):
+            new = self.store.curr()
+            self.driver.get(new.local_url)
+
+        return False  # reset the buffer
+
     def dismissInput(self):
-        global SHOWING_JUMP_INPUT, SHOWING_ED_INPUT
+        global SHOWING_JUMP_INPUT, SHOWING_ED_INPUT, SHOWING_JUMP_METRO_INPUT
 
         SHOWING_ED_INPUT = False
         SHOWING_JUMP_INPUT = False
+        SHOWING_JUMP_METRO_INPUT = False
 
     def removeLastED(self):
         self.store.removeLastED()
@@ -336,10 +382,20 @@ class Annotator:
     def nextMetro(self):
         new = self.store.nextMetro()
         self.driver.get(new.local_url)
-        self.curr_ed = Ed(1)
+        self.curr_ed = Ed(self.store.smallestEDForCurrentMetro())
 
     def prevMetro(self):
         new = self.store.prevMetro()
+        self.driver.get(new.local_url)
+        self.curr_ed = Ed.from_str(self.store.largestEDForCurrentMetro())
+
+    def nextYear(self):
+        new = self.store.nextYear()
+        self.driver.get(new.local_url)
+        self.curr_ed = Ed(self.store.smallestEDForCurrentMetro())
+
+    def prevYear(self):
+        new = self.store.prevYear()
         self.driver.get(new.local_url)
         self.curr_ed = Ed.from_str(self.store.largestEDForCurrentMetro())
 
@@ -515,6 +571,14 @@ class Annotator:
         def _(event):
             self.prevImage()
 
+        @kb.add(")")
+        def _(event):
+            self.nextYear()
+
+        @kb.add("(")
+        def _(event):
+            self.prevYear()
+
         @kb.add("}")
         def _(event):
             self.nextMetro()
@@ -546,6 +610,10 @@ class Annotator:
         @kb.add("j")
         def _(event):
             self.jumpToIndex()
+
+        @kb.add("J")
+        def _(event):
+            self.jumpToMetro()
 
         @kb.add("c-delete")
         @kb.add("backspace")

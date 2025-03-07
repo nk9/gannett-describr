@@ -113,6 +113,34 @@ class Store:
 
         return None
 
+    def nextYear(self):
+        if self.index is None:
+            self.index = 0
+
+        for index, img in enumerate(self.images):
+            if (
+                index < len(self.images) - 1
+                and index >= self.index
+                and img.year != self.images[index + 1].year
+            ):
+                self.index = index + 1
+                return self.images[self.index]
+
+        return None
+
+    def prevYear(self):
+        if self.index is not None:
+            for index, img in reversed(list(enumerate(self.images[: self.index + 1]))):
+                if (
+                    index >= 1
+                    and index <= self.index
+                    and img.year != self.images[index - 1].year
+                ):
+                    self.index = index - 1
+                    return self.images[self.index]
+
+        return None
+
     def curr(self):
         if self.index is None:
             index = 0
@@ -239,6 +267,23 @@ class Store:
 
         return res[0] if res is not None else "1"
 
+    def smallestEDForCurrentMetro(self):
+        image = self.curr()
+
+        res = self.db.execute(
+            """
+            SELECT name
+            FROM eds AS e
+                JOIN images AS i ON i.id = e.image_id
+            WHERE i.utp_code = ?
+            ORDER BY e.name ASC
+            LIMIT 1
+            """,
+            (image.utp_code,),
+        ).fetchone()
+
+        return res[0] if res is not None else "1"
+
     def skipToLastEntered(self):
         for index, img in reversed(list(enumerate(self.images))):
             if img.year != "1880" and len(img.eds):
@@ -254,6 +299,14 @@ class Store:
             ):
                 self.index = index
                 break
+
+    def jumpToMetro(self, prefix):
+        for index, img in enumerate(self.images):
+            if index > self.index and img.utp_code.lower().startswith(prefix.lower()):
+                self.index = index
+                return True
+
+        return False
 
     def init_db(self):
         self.db.connection.execute("PRAGMA foreign_keys = 1")
