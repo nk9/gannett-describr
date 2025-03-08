@@ -29,6 +29,8 @@ Place your right hand on the <kbd>n</kbd>, <kbd>m</kbd>, <kbd>&lt;</kbd>, and <k
 | <kbd>.</kbd>,&nbsp;<kbd>&gt;</kbd>  | Switch to **next image** (mnemonic: right angle bracket) |
 | <kbd>{</kbd>  | Jump to **previous metro** (mnemonic: left curly brace)|
 | <kbd>}</kbd>  | Jump to **next metro** (mnemonic: right curly brace) |
+| <kbd>(</kbd>  | Jump to **previous year** (mnemonic: left paren) |
+| <kbd>)</kbd>  | Jump to **next year** (mnemonic: right paren) |
 | <kbd>/</kbd>,&nbsp;<kbd>?</kbd>  | **Undo** last ED addition in the current image |
 | <kbd>-</kbd> | **Decrement ED** in primary slot |
 | <kbd>=</kbd> | **Increment ED** in primary slot (mnemonic: <kbd>+</kbd> uses the same key)  |
@@ -55,6 +57,7 @@ There are a number of other available shortcuts:
 | Key  | Effect |
 | ---- | ------------- |
 | <kbd>j</kbd> | **Jump to index** |
+| <kbd>J</kbd> | **Jump to metro** by prefix |
 | <kbd>u</kbd> | **Open URL** for current image on FamilySearch site |
 | <kbd>backspace</kbd> | **Remove** last ED from image |
 | <kbd>s</kbd> | **Skip 1 beyond last untagged** image within current city |
