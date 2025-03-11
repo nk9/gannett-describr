@@ -382,7 +382,7 @@ class Annotator:
     def nextMetro(self):
         new = self.store.nextMetro()
         self.driver.get(new.local_url)
-        self.curr_ed = Ed(self.store.smallestEDForCurrentMetro())
+        self.curr_ed = Ed.from_str(self.store.smallestEDForCurrentMetro())
 
     def prevMetro(self):
         new = self.store.prevMetro()
@@ -392,7 +392,7 @@ class Annotator:
     def nextYear(self):
         new = self.store.nextYear()
         self.driver.get(new.local_url)
-        self.curr_ed = Ed(self.store.smallestEDForCurrentMetro())
+        self.curr_ed = Ed.from_str(self.store.smallestEDForCurrentMetro())
 
     def prevYear(self):
         new = self.store.prevYear()
