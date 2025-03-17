@@ -381,8 +381,12 @@ class Annotator:
 
     def nextMetro(self):
         new = self.store.nextMetro()
-        self.driver.get(new.local_url)
-        self.curr_ed = Ed.from_str(self.store.smallestEDForCurrentMetro())
+
+        if new and new.local_url:
+            self.driver.get(new.local_url)
+            self.curr_ed = Ed.from_str(self.store.smallestEDForCurrentMetro())
+        else:
+            print("ERROR: Failed to find next metro: {new}")
 
     def prevMetro(self):
         new = self.store.prevMetro()

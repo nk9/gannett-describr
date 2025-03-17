@@ -3,6 +3,7 @@ import json
 import re
 from pathlib import Path
 from src.store import Image
+from logging import error
 
 DB_FILE_NAME = "annotated.db"
 
@@ -25,28 +26,32 @@ def buildImageList():
 
     with open(data_dir / "ed_descr_nums.csv") as csvf:
         for row in csv.DictReader(csvf):
-            if row["digital_film_no"]:
+            if row["digital_film_no"] and row["start_index"] and row["stop_index"]:
                 start = int(row["start_index"])
                 stop = int(row["stop_index"])
-                metro_index = 0
-                if info := film_info.get(row["digital_film_no"]):
-                    for index, ark in enumerate(info):
-                        if index >= start and index <= stop:
-                            images.append(
-                                Image(
-                                    row["year"],
-                                    row["utp_code"],
-                                    ark,
-                                    index,
-                                    metro_index,
-                                    stop - start,
-                                    row["collection"],
+
+                if start < stop:
+                    metro_index = 0
+                    if info := film_info.get(row["digital_film_no"]):
+                        for index, ark in enumerate(info):
+                            if index >= start and index <= stop:
+                                images.append(
+                                    Image(
+                                        row["year"],
+                                        row["utp_code"],
+                                        ark,
+                                        index,
+                                        metro_index,
+                                        stop - start,
+                                        row["collection"],
+                                    )
                                 )
-                            )
-                            metro_index += 1
+                                metro_index += 1
+                    else:
+                        error(f"No film info json found for {row['digital_film_no']}")
                 else:
-                    print(
-                        f"ERROR: No film info json found for {row['digital_film_no']}"
+                    error(
+                        f"{row['year']} {row['utp_code']}: start_index {start} > stop_index {stop}"
                     )
 
     return images

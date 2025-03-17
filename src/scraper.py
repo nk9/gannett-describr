@@ -40,57 +40,28 @@ app = typer.Typer()
 def scrape_ed_desc_images(
     debug: Annotated[bool, typer.Option("--debug", "-v")] = False,
     headless: Annotated[bool, typer.Option("--headless", "-h")] = False,
+    offline: Annotated[bool, typer.Option("--offline", "-o")] = False,
 ):
-    scraper = Scraper(debug, driver(use_dummy=headless, use_offline=True))
+    scraper = Scraper(debug, driver(use_dummy=headless, use_offline=offline))
+
+    # Let the browser launch
+    time.sleep(3)
+
     scraper.scrape_ed_desc_images()
-    # scraper.write(Path("../gannett-data/fs_eds.parquet"))
 
 
 class Scraper:
     def __init__(self, debug, driver):
         self.debug = debug
         self.driver = driver
-        self.image_response_ids = set()
+        # self.image_response_ids = set()
         self.written_arks = set()
         self.out_path = Path("../ed-desc-img/")  # TODO: make this dynamic
-
-        self.driver.add_cdp_listener("Network.responseReceived", self.response_received)
-        self.driver.add_cdp_listener("Network.loadingFinished", self.loading_finished)
 
         db_path = "annotated.db"
         self.connection = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
         self.cursor = self.connection.cursor()
         self.store = Store(self.cursor, buildImageList())
-
-    def response_received(self, event):
-        params = event["params"]
-        res = params["response"]
-        req_id = params["requestId"]
-
-        if params["type"] == "Image" and "/dist.jpg?" in res["url"]:
-            self.image_response_ids.add(req_id)
-
-    def loading_finished(self, event):
-        req_id = event["params"]["requestId"]
-
-        if req_id in self.image_response_ids:
-            try:
-                body = self.driver.execute_cdp_cmd(
-                    "Network.getResponseBody", {"requestId": req_id}
-                )
-
-                img = self.store.curr()
-                image_path = self.image_path(img)
-                image_data = base64.b64decode(body["body"])
-                # print(image_data)
-
-                if len(image_data) > 20_000:
-                    with open(image_path, "wb") as file:
-                        file.write(image_data)
-                        self.written_arks.add(img.ark)
-                        print(" Written.")
-            except Exception as e:
-                print("Failed:", e)
 
     def scrape_ed_desc_images(self):
         # Let the user sign in
@@ -100,7 +71,7 @@ class Scraper:
 
         val = input("Waiting… [q to quit] ")
 
-        if val == "q":
+        if val.lower() == "q":
             return
 
         last = self.store.curr()
@@ -118,10 +89,19 @@ class Scraper:
                 load_count += 1
                 last = img
 
-                # Let the image fully load
+                time.sleep(5)
+
+                self.clickButtonLabelled("Download")
+                self.waitForDownload(ark_path)
+                print(" Done.", flush=True)
+
+                # Avoid overwhelming the site
                 time.sleep(random.randint(15, 30))
 
-                if load_count % LOAD_LIMIT == 0 or img.ark not in self.written_arks:
+                if (
+                    load_count % LOAD_LIMIT == 0
+                    or img.short_ark not in self.written_arks
+                ):
                     target = dt.datetime.now() + dt.timedelta(minutes=61)
                     print(f"Taking a break to avoid throttling. Resuming at {target}…")
                     time.sleep(61 * 60)
@@ -130,23 +110,54 @@ class Scraper:
                 print(f"        Skipping {last_3}")
 
     def image_path(self, img):
-        short_ark = img.ark[4:]
-        return self.out_path / str(img.year) / img.utp_code / f"{short_ark}.jpg"
+        return self.out_path / str(img.year) / img.utp_code / f"{img.short_ark}.jpg"
 
     def load_next(self, old, new):
         if old.utp_code == new.utp_code and new.image_index == old.image_index + 1:
-            self.clickSpanWithClass("next")
+            self.clickButtonLabelled("Next Image")
         else:
             self.driver.get(new.url)
 
-    def clickSpanWithClass(self, name):
+    def clickButtonLabelled(self, ariaLabel):
         self.driver.execute_script(
             f"""
-            var span = window.document.getElementsByClassName('{name}')[0];
-            var click = new Event('click');
-            span.dispatchEvent(click);
-        """
+            window.document.querySelector('button[aria-label="{ariaLabel}"]')?.click();
+            """
+            # var click = new Event('click');
+            # button.dispatchEvent(click);
         )
+
+    def waitForDownload(self, ark_path: Path, timeout=60, check_interval=1):
+        """
+        Waits for a file to fully download, then moves it to `ark_path`.
+
+        :param ark_path: Full destination path (including filename).
+        :param timeout: Max time to wait for the file to download (in seconds).
+        :param check_interval: Time interval between file existence checks.
+        """
+        download_dir = Path.home() / "Downloads"
+        downloaded_file = download_dir / ark_path.name
+
+        elapsed_time = 0
+        last_size = -1
+
+        while elapsed_time < timeout:
+            if downloaded_file.exists():
+                current_size = downloaded_file.stat().st_size
+                if (
+                    current_size > 0 and current_size == last_size
+                ):  # Stable file size check
+                    break
+                last_size = current_size
+            time.sleep(check_interval)
+            elapsed_time += check_interval
+        else:
+            raise TimeoutError(
+                f"Download timed out after {timeout} seconds: {ark_path.name}"
+            )
+
+        downloaded_file.rename(ark_path)
+        self.written_arks.add(ark_path.stem)
 
 
 if __name__ == "__main__":

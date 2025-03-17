@@ -18,6 +18,7 @@ class Image:
         self.year = year
         self.utp_code = utp_code
         self.ark = ark
+        self.short_ark = ark[4:]
         self.image_index = i
         self.metro_image_index = metro_index
         self.metro_image_count = metro_image_count
@@ -51,8 +52,9 @@ class Image:
 
     @property
     def local_url(self):
-        short_ark = self.ark[4:]
-        path = Path("../ed-desc-img") / self.year / self.utp_code / f"{short_ark}.jpg"
+        path = (
+            Path("../ed-desc-img") / self.year / self.utp_code / f"{self.short_ark}.jpg"
+        )
         return path.resolve().as_uri()
 
 
