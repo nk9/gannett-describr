@@ -27,7 +27,7 @@ from typing_extensions import Annotated
 from src.driver import driver
 from src.ed import Ed, ManualEDList
 from src.store import Image, Store, prev
-from src.utils import buildImageList, DB_FILE_NAME
+from src.utils import buildImageList, missingSources
 
 # Turn on to get verbose Selenium logs
 # import logging
@@ -70,13 +70,36 @@ app = typer.Typer()
 
 @app.command()
 def annotate_ed_desc_images(
+    db: Annotated[Path, typer.Option("--db")],
+    index_csv: Annotated[Path, typer.Option("--index-csv")],
+    img_dir: Annotated[Path, typer.Option("--img-dir")],
     debug: Annotated[bool, typer.Option("--debug", "-v")] = False,
     headless: Annotated[
         bool, typer.Option("--headless", "-h", "--dummy", "-d")
     ] = False,
     offline: Annotated[bool, typer.Option("--offline", "-o")] = False,
 ):
-    annotator = Annotator(debug, driver(use_dummy=headless, use_offline=offline))
+    if missing := missingSources(index_csv):
+        print(
+            f"WARNING: {len(missing)} film(s)/roll(s) in {index_csv} have no image "
+            "list, so their images are left out:"
+        )
+        for source in missing:
+            print(f"    {source}")
+        print("Run the matching scrape recipe (scrape-img or scrape-maps) to fetch them.")
+
+        if input("Continue anyway? [y/N] ").lower() != "y":
+            raise typer.Exit(1)
+
+    images = buildImageList(index_csv, img_dir)
+
+    if not images:
+        print(f"No images to annotate in {index_csv}.")
+        raise typer.Exit(1)
+
+    annotator = Annotator(
+        debug, driver(use_dummy=headless, use_offline=offline), db, images
+    )
     annotator.process()
 
 
@@ -114,14 +137,14 @@ class DummyDriver:
 
 
 class Annotator:
-    def __init__(self, debug, driver):
+    def __init__(self, debug, driver, db_path, images):
         self.driver = driver
         self.debug = debug
         self.ed_input_state = EDState.NONE
 
-        connection = sqlite3.connect(DB_FILE_NAME)
+        connection = sqlite3.connect(db_path)
         cursor = connection.cursor()
-        self.store = Store(cursor, buildImageList())
+        self.store = Store(cursor, images)
         self.store.populate_db()
         _ = next(self.store)  # Tee up correct curr() image
 

@@ -6,22 +6,22 @@ import pyarrow as pa
 import typer
 from typing_extensions import Annotated
 
-from src.utils import DB_FILE_NAME
-
 app = typer.Typer()
 
 
 @app.command()
 def export(
+    db: Annotated[Path, typer.Option("--db")],
+    out: Annotated[Path, typer.Option("--out")],
     debug: Annotated[bool, typer.Option("--debug", "-v")] = False,
 ):
-    exporter = Exporter(debug)
-    exporter.write(Path("../gannett-data/fs_ed_descriptions.parquet"))
+    exporter = Exporter(db, debug)
+    exporter.write(out)
 
 
 class Exporter:
-    def __init__(self, debug):
-        self.prepare_db_connection()
+    def __init__(self, db_path, debug):
+        self.prepare_db_connection(db_path)
         self.descrs = self.fetch_ed_descrs()
 
     def write(self, path):
@@ -41,8 +41,8 @@ class Exporter:
         self.descrs.to_parquet(path, schema=schema, index=False)
         print(f"Written to {path}")
 
-    def prepare_db_connection(self):
-        self.connection = sqlite3.connect(f"file:{DB_FILE_NAME}?mode=ro", uri=True)
+    def prepare_db_connection(self, db_path):
+        self.connection = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
         self.db = self.connection.cursor()
 
     def load_mapping(self):

@@ -19,6 +19,7 @@ requests-cache = "^1.2.1"
 requests-ratelimiter = "^0.7.0"
 pyarrow = "^17.0.0"
 pandas = "^2.2.2"
+gannett-fs = {path = "../gannett-fs", develop = true}
 
 
 [tool.pytest.ini_options]

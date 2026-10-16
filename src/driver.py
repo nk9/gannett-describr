@@ -1,11 +1,12 @@
 import undetected_chromedriver as uc
+from gannett_fs import USER_AGENT
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver import Chrome
 
 
 def driver(use_dummy=False, use_offline=False):
     driver = DummyDriver()
-    custom_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.59 Safari/537.36"
+    custom_agent = USER_AGENT
 
     if use_offline:
         options = Options()

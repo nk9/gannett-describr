@@ -2,6 +2,7 @@ import csv
 import json
 import re
 from pathlib import Path
+from urllib.parse import quote
 
 from ordered_set import StableSet
 
@@ -11,10 +12,24 @@ from src.log import get_logger
 prev = lambda obj: obj.prev()
 
 FS_IMG_URL = "https://www.familysearch.org/ark:/61903/{ark}?i={i}&cat={cat}"
+FS_WAYPOINT_IMG_URL = (
+    "https://www.familysearch.org/ark:/61903/{ark}?wc={wc}&cc={cc}&i={i}"
+)
 
 
 class Image:
-    def __init__(self, year, utp_code, ark, i, metro_index, metro_image_count, cat):
+    def __init__(
+        self,
+        year,
+        utp_code,
+        ark,
+        i,
+        metro_index,
+        metro_image_count,
+        cat,
+        img_dir=None,
+        waypoint=None,
+    ):
         self.year = year
         self.utp_code = utp_code
         self.ark = ark
@@ -23,6 +38,8 @@ class Image:
         self.metro_image_index = metro_index
         self.metro_image_count = metro_image_count
         self.cat = cat
+        self.img_dir = img_dir
+        self.waypoint = waypoint  # Images in a roll are viewed within its waypoint
         self.eds = StableSet([])
         self.db_id = None
 
@@ -46,16 +63,27 @@ class Image:
 
     @property
     def url(self):
+        if self.waypoint:
+            return FS_WAYPOINT_IMG_URL.format_map(
+                {
+                    "ark": self.ark,
+                    "wc": quote(self.waypoint, safe=""),
+                    "cc": self.cat,
+                    "i": self.image_index,
+                }
+            )
+
         return FS_IMG_URL.format_map(
             {"ark": self.ark, "i": self.image_index, "cat": self.cat}
         )
 
     @property
+    def local_path(self):
+        return Path(self.img_dir) / str(self.year) / self.utp_code / f"{self.short_ark}.jpg"
+
+    @property
     def local_url(self):
-        path = (
-            Path("../ed-desc-img") / self.year / self.utp_code / f"{self.short_ark}.jpg"
-        )
-        return path.resolve().as_uri()
+        return self.local_path.resolve().as_uri()
 
 
 class Store:
@@ -316,7 +344,7 @@ class Store:
         self.db.execute(
             """
             CREATE TABLE IF NOT EXISTS images (
-                id INTEGER PRIMARY KEY,
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 year INTEGER NOT NULL,
                 utp_code VARCHAR NOT NULL,
                 ark VARCHAR NOT NULL,
@@ -328,12 +356,31 @@ class Store:
         self.db.execute(
             """
             CREATE TABLE IF NOT EXISTS eds (
-                id INTEGER PRIMARY KEY,
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 image_id INTEGER NOT NULL,
                 name VARCHAR,
                 created_at INTEGER DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (image_id) REFERENCES images (id),
                 UNIQUE(image_id, name));
+            """
+        )
+        self.db.execute(
+            """
+            CREATE VIEW IF NOT EXISTS overview AS
+            SELECT * FROM images AS i
+            LEFT JOIN eds AS e ON e.image_id = i.id
+            ORDER BY i.id;
+            """
+        )
+        self.db.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS set_created_at
+            AFTER INSERT ON eds
+            FOR EACH ROW
+            WHEN NEW.created_at IS NULL
+            BEGIN
+                UPDATE eds SET created_at = CURRENT_TIMESTAMP WHERE id = NEW.rowid;
+            END;
             """
         )
         self.db.connection.commit()

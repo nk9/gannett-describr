@@ -6,12 +6,23 @@ https://github.com/user-attachments/assets/ddffc9c5-eabe-4877-9721-755d7440befa
 
 ## The Scraper
 
-To download images from FamilySearch for categorization, populate the `../gannett-data/scrape_fs/ed_descr_nums.csv` file with all of the film numbers, UTP codes, and index start/end points. If you have added any new film numbers, you'll need to fetch the JSON description of those using the `just scrape_fs_ed_desc_film_info` recipe in `gannett-pipeline`.
+Describr works with two sets of images, each with its own index CSV, image directory, and database:
 
+| | Index CSV | Images | Database | Annotate | Download | Export |
+| --- | --- | --- | --- | --- | --- | --- |
+| ED descriptions | `../gannett-data/scrape_fs/ed_descr_nums.csv` | `../ed-desc-img` | `annotated.db` | `just` | `just scrape-img` | `just export` |
+| ED maps | `../gannett-data/scrape_fs/ed_map_nums.csv` | `../ed-map-img` | `ed_maps.db` | `just maps` | `just scrape-maps` | `just export-maps` |
 
-Then simply run `just scrape-img` in this repo. Sign into FamilySearch in the spawned browser, and then return to the terminal and press Return.
+To download images from FamilySearch for categorization, populate the index CSV with UTP codes, where the images are, and their image indexes:
 
-That will populate the `../gannett-data/` directory with images broken up by years and UTP code.
+- **ED descriptions** are on microfilms: give the `digital_film_no` and `collection`, with `start_index`/`stop_index`.
+- **ED maps** are in rolls of collection `2329948`: give that `collection` and the `roll_no` (e.g. `14` for "Roll 14, Illinois, Adams-Cook"), with an `indexes` column holding an inclusive index set such as `150-155,160-200`. Indexes are 1-based, matching the viewer's "Image N of M" (its URLs' `i=` is N − 1).
+
+A metro may span several rows, e.g. when its pages are on more than one film or roll.
+
+Then run the download recipe. It first fetches the image list for any new film or roll into `../gannett-data/scrape_fs/films/`, then downloads any images not already on disk. Roll image lists are public, so fetching them never needs a sign-in. FamilySearch access lives in the shared [`gannett-fs`](../gannett-fs) package, which `gannett-pipeline` uses too.
+
+The scraper only asks you to sign into FamilySearch when it has to. It tries the `FS_AUTH`/`FS_COOKIES` credentials in `../gannett-pipeline/.env`, then the browser profile's saved session, and only then opens the sign-in page. Whenever it finds a newer session in the browser, it writes it back to that `.env`, which keeps `gannett-pipeline`'s FamilySearch scraper working too.
 
 ## The Annotator
 
