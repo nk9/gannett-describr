@@ -1,3 +1,4 @@
+import shutil
 import sqlite3
 from enum import Enum, auto
 from pathlib import Path
@@ -128,6 +129,24 @@ def showingRemoveList():
     return SHOWING_REMOVE_LIST
 
 
+def wrap_after(prefix, items, width):
+    """Lines of prefix followed by items, wrapped so every line lines up after the prefix."""
+    # Keep a usable column even when the prefix nearly fills the terminal
+    room = max(width - len(prefix), 10)
+    lines = []
+    line = ""
+    for item in items:
+        if line and len(line) + 1 + len(item) > room:
+            lines.append(line)
+            line = item
+        else:
+            line = f"{line} {item}" if line else item
+    lines.append(line)
+
+    indent = " " * len(prefix)
+    return [prefix + lines[0], *(indent + line for line in lines[1:])]
+
+
 class DummyDriver:
     def get(self, url):
         pass
@@ -198,10 +217,15 @@ class Annotator:
         self.remove_list.multiple_selection = True
 
         def makeLayout():
+            bottom_lines = self.bottom_toolbar()
             return HSplit(
                 [
                     Window(FormattedTextControl(self.top_toolbar()), height=1),
-                    Window(FormattedTextControl(self.bottom_toolbar()), height=1),
+                    # Grows to fit the image's EDs, pushing the lines above it up
+                    Window(
+                        FormattedTextControl("\n".join(bottom_lines)),
+                        height=len(bottom_lines),
+                    ),
                     ConditionalContainer(
                         content=self.ed_input, filter=SHOWING_ED_INPUT
                     ),
@@ -228,7 +252,10 @@ class Annotator:
 
     def bottom_toolbar(self):
         now = self.store.curr()
-        return f"<{self.store.index:5}> Cur: {self.curr_ed} - Man: {self.manual_eds.currStr} - Img EDs: {list(now.eds)}"
+        prefix = f"<{self.store.index:5}> Cur: {self.curr_ed} - Man: {self.manual_eds.currStr} - Img EDs ({len(now.eds)}): "
+        # Leave the last column free so the terminal never wraps a line itself
+        width = shutil.get_terminal_size().columns - 1
+        return wrap_after(prefix, list(now.eds), width)
 
     def current_image(self):
         now = self.store.curr()
