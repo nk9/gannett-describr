@@ -1,3 +1,4 @@
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -10,13 +11,19 @@ from selenium.webdriver.common.driver_finder import DriverFinder
 from selenium.webdriver import Chrome
 
 
-def driver(use_dummy=False, use_offline=False):
+# The scrapers stay signed into FamilySearch in the default profile. The annotator
+# uses its own, since Chrome lets only one browser at a time use a profile.
+SCRAPER_PROFILE = "selenium"
+ANNOTATOR_PROFILE = "selenium-annotator"
+
+
+def driver(use_dummy=False, use_offline=False, profile=SCRAPER_PROFILE):
     driver = DummyDriver()
     custom_agent = USER_AGENT
 
     if use_offline:
         options = Options()
-        options.add_argument("--user-data-dir=selenium")
+        options.add_argument(f"--user-data-dir={profile}")
         options.add_argument("--disk-cache-size=1024300000")
 
         options.add_argument(f"--user-agent={custom_agent}")
@@ -24,7 +31,7 @@ def driver(use_dummy=False, use_offline=False):
         driver = Chrome(options=options)
     elif not use_dummy:
         options = uc.ChromeOptions()
-        options.add_argument("--user-data-dir=selenium")
+        options.add_argument(f"--user-data-dir={profile}")
         options.add_argument("--disk-cache-size=1024300000")
         options.add_argument("--window-size=1504,1573")  # broken?
         options.add_argument("--window-position=1504,25")  # broken?
@@ -54,7 +61,8 @@ def native_chromedriver():
     target = Path(uc.Patcher.data_path) / f"chromedriver_{version}"
 
     if not target.exists():
-        patching = target.with_name(f"{target.name}.tmp")
+        # Unique per process, so tools launched together don't patch the same file
+        patching = target.with_name(f"{target.name}.{os.getpid()}.tmp")
         shutil.copy2(source, patching)
         uc.Patcher(executable_path=str(patching)).auto()
 

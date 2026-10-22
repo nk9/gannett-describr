@@ -25,7 +25,7 @@ from prompt_toolkit.shortcuts import checkboxlist_dialog
 from selenium.webdriver.chrome.options import Options
 from typing_extensions import Annotated
 
-from src.driver import driver
+from src.driver import ANNOTATOR_PROFILE, driver
 from src.ed import Ed, ManualEDList
 from src.store import Image, Store, prev
 from src.utils import buildImageList, missingSources
@@ -99,7 +99,10 @@ def annotate_ed_desc_images(
         raise typer.Exit(1)
 
     annotator = Annotator(
-        debug, driver(use_dummy=headless, use_offline=offline), db, images
+        debug,
+        driver(use_dummy=headless, use_offline=offline, profile=ANNOTATOR_PROFILE),
+        db,
+        images,
     )
     annotator.process()
 
