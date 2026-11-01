@@ -1,4 +1,4 @@
-desc_db := "annotated.db"
+desc_db := "../gannett-data/annotated.db"
 desc_csv := "../gannett-data/scrape_fs/ed_descr_nums.csv"
 desc_img := "../ed-desc-img"
 

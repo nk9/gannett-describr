@@ -10,7 +10,7 @@ Describr works with two sets of images, each with its own index CSV, image direc
 
 | | Index CSV | Images | Database | Annotate | Download | Export |
 | --- | --- | --- | --- | --- | --- | --- |
-| ED descriptions | `../gannett-data/scrape_fs/ed_descr_nums.csv` | `../ed-desc-img` | `annotated.db` | `just` | `just scrape-img` | `just export` |
+| ED descriptions | `../gannett-data/scrape_fs/ed_descr_nums.csv` | `../ed-desc-img` | `../gannett-data/annotated.db` | `just` | `just scrape-img` | `just export` |
 | ED maps | `../gannett-data/scrape_fs/ed_map_nums.csv` | `../ed-map-img` | `ed_maps.db` | `just maps` | `just scrape-maps` | `just export-maps` |
 
 To download images from FamilySearch for categorization, populate the index CSV with UTP codes, where the images are, and their image indexes:
